@@ -2,6 +2,9 @@
 
 import { connectDB } from "@/lib/db"
 import { Product, Category, Sale, CashRegister } from "@/lib/models"
+import { requirePermission } from "@/lib/auth"
+import { PERMISSIONS } from "@/lib/permissions"
+import { unstable_cache } from "next/cache"
 
 export interface PeriodStat {
   count: number
@@ -61,7 +64,16 @@ export interface DashboardData {
   recentClosings: RecentClosing[]
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+const EMPTY_DASHBOARD: DashboardData = {
+  stats: { activeProducts: 0, activeCategories: 0, periodStats: { today: { count: 0, total: 0 }, week: { count: 0, total: 0 }, month: { count: 0, total: 0 } } },
+  topProducts: [],
+  lowStockProducts: [],
+  unsoldProducts: [],
+  recentClosings: [],
+}
+
+const fetchDashboardData = unstable_cache(
+  async (): Promise<DashboardData> => {
   await connectDB()
 
   const now = new Date()
@@ -148,28 +160,30 @@ export async function getDashboardData(): Promise<DashboardData> {
       .lean(),
   ])
 
-  // Products never sold
+  // Products never sold + Sales aggregate per cash register (independent, run in parallel)
   const soldIds = soldProductIds.map((s: { _id: string }) => s._id)
-  const unsoldProductsData = await Product.find({
-    _id: { $nin: soldIds },
-    active: true,
-  })
-    .populate("category_id", "name")
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .lean()
-
-  // Sales aggregate per cash register for recent closings
   const closingIds = recentClosingsData.map((c: { _id: string }) => c._id)
-  const salesByCashRegister = await Sale.aggregate([
-    { $match: { cash_register_id: { $in: closingIds } } },
-    {
-      $group: {
-        _id: "$cash_register_id",
-        salesCount: { $sum: 1 },
-        salesTotal: { $sum: "$total" },
+
+  const [unsoldProductsData, salesByCashRegister] = await Promise.all([
+    Product.find({
+      _id: { $nin: soldIds },
+      active: true,
+    })
+      .populate("category_id", "name")
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean(),
+
+    Sale.aggregate([
+      { $match: { cash_register_id: { $in: closingIds } } },
+      {
+        $group: {
+          _id: "$cash_register_id",
+          salesCount: { $sum: 1 },
+          salesTotal: { $sum: "$total" },
+        },
       },
-    },
+    ]),
   ])
 
   const salesByRegisterMap = new Map(
@@ -246,4 +260,14 @@ export async function getDashboardData(): Promise<DashboardData> {
     unsoldProducts: unsold,
     recentClosings,
   }
+  },
+  ["dashboard-data"],
+  { revalidate: 60 }
+)
+
+export async function getDashboardData(): Promise<DashboardData> {
+  const auth = await requirePermission(PERMISSIONS.DASHBOARD_VIEW)
+  if (auth.error) return EMPTY_DASHBOARD
+
+  return fetchDashboardData()
 }

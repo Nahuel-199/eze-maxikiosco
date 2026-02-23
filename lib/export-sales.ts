@@ -1,7 +1,8 @@
-import * as XLSX from "xlsx"
 import type { SaleExportRow } from "@/lib/actions/sales-history"
 
-export function exportSalesToExcel(rows: SaleExportRow[], filename: string) {
+export async function exportSalesToExcel(rows: SaleExportRow[], filename: string) {
+  const XLSX = await import("xlsx")
+
   const data = rows.map((row) => ({
     Fecha: row.date,
     Hora: row.time,

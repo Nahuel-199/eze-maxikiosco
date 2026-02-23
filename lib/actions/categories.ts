@@ -3,6 +3,8 @@
 import { connectDB } from "@/lib/db"
 import { Category } from "@/lib/models"
 import { revalidatePath } from "next/cache"
+import { requireSession, requirePermission } from "@/lib/auth"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export interface CategoryFormData {
   name: string
@@ -16,6 +18,9 @@ export interface CategoryFormData {
  */
 export async function getCategoriesAll() {
   try {
+    const auth = await requireSession()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const categories = await Category.find({ active: true }).sort({ name: 1 }).lean()
@@ -38,6 +43,9 @@ export async function getCategoriesAll() {
  */
 export async function getCategoryById(id: string) {
   try {
+    const auth = await requireSession()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const category = await Category.findById(id).lean()
@@ -64,6 +72,9 @@ export async function getCategoryById(id: string) {
  */
 export async function createCategory(data: CategoryFormData) {
   try {
+    const auth = await requirePermission(PERMISSIONS.CATEGORIES_CREATE)
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     // Validar unicidad del nombre
@@ -116,6 +127,9 @@ export async function createCategory(data: CategoryFormData) {
  */
 export async function updateCategory(id: string, data: CategoryFormData) {
   try {
+    const auth = await requirePermission(PERMISSIONS.CATEGORIES_EDIT)
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     const category = await Category.findById(id)
@@ -180,6 +194,9 @@ export async function updateCategory(id: string, data: CategoryFormData) {
  */
 export async function deleteCategory(id: string) {
   try {
+    const auth = await requirePermission(PERMISSIONS.CATEGORIES_DELETE)
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     const category = await Category.findById(id)

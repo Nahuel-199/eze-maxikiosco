@@ -3,12 +3,16 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ShoppingCart, Package, CreditCard, BarChart3 } from "lucide-react"
 import Link from "next/link"
+import { hasPermission, PERMISSIONS } from "@/lib/permissions"
 
 interface DashboardCardsProps {
   role: string
+  permissions?: string[]
 }
 
-export function DashboardCards({ role }: DashboardCardsProps) {
+export function DashboardCards({ role, permissions }: DashboardCardsProps) {
+  const session = { role, permissions }
+
   const cards = [
     {
       title: "Punto de Venta",
@@ -26,17 +30,20 @@ export function DashboardCards({ role }: DashboardCardsProps) {
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
-    {
+  ]
+
+  if (hasPermission(session, PERMISSIONS.REPORTS_VIEW)) {
+    cards.push({
       title: "Reportes",
       description: "Ver ventas y estadísticas",
       icon: BarChart3,
       href: "/dashboard/reports",
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-    },
-  ]
+    })
+  }
 
-  if (role === "admin") {
+  if (hasPermission(session, PERMISSIONS.PRODUCTS_VIEW)) {
     cards.push({
       title: "Productos",
       description: "Gestionar inventario y categorías",

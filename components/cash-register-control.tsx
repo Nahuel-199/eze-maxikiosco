@@ -22,12 +22,14 @@ import { CashRegisterHistory } from "@/components/cash-register-history"
 import { getActiveCashRegister, getCashRegisterSummary } from "@/lib/actions/cash-register"
 import { getActiveRegisterMovements } from "@/lib/actions/cash-movements"
 import type { CashRegister, CashMovement, CashRegisterSummary } from "@/lib/types"
+import { hasPermission, PERMISSIONS } from "@/lib/permissions"
 
 interface CashRegisterControlProps {
   user: {
     id: string
     full_name: string
     role: string
+    permissions?: string[]
   }
 }
 
@@ -72,7 +74,7 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
     loadData()
   }
 
-  const isAdmin = user.role === "admin"
+  const canDeleteMovements = hasPermission(user, PERMISSIONS.CASH_MOVEMENTS_DELETE)
 
   if (isLoading) {
     return (
@@ -267,7 +269,7 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
         {activeRegister && (
           <CashMovementsList
             movements={movements}
-            isAdmin={isAdmin}
+            isAdmin={canDeleteMovements}
             onMovementDeleted={handleSuccess}
           />
         )}

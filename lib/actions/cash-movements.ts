@@ -4,7 +4,8 @@ import mongoose from "mongoose"
 import { connectDB } from "@/lib/db"
 import { CashMovement, CashRegister } from "@/lib/models"
 import { revalidatePath } from "next/cache"
-import { getSession } from "@/lib/auth"
+import { getSession, requireSession } from "@/lib/auth"
+import { hasPermission, PERMISSIONS } from "@/lib/permissions"
 import type { CashMovement as CashMovementType, CashMovementType as MovementType } from "@/lib/types"
 
 /**
@@ -29,10 +30,13 @@ export interface CreateCashMovementData {
  */
 export async function createCashMovement(data: CreateCashMovementData) {
   try {
+    const auth = await requireSession()
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
-    const session = await getSession()
-    const userId = session?.id
+    const session = auth.session
+    const userId = session.id
     const validUserId = isValidObjectId(userId) ? userId : undefined
 
     // Obtener la caja activa
@@ -88,6 +92,9 @@ export async function createCashMovement(data: CreateCashMovementData) {
  */
 export async function getCashMovements(cashRegisterId: string): Promise<CashMovementType[]> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return []
+
     await connectDB()
 
     const movements = await CashMovement.find({ cash_register_id: cashRegisterId })
@@ -118,6 +125,9 @@ export async function getCashMovements(cashRegisterId: string): Promise<CashMove
  */
 export async function getActiveRegisterMovements(): Promise<CashMovementType[]> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return []
+
     await connectDB()
 
     const cashRegister = await CashRegister.findOne({ status: "open" })
@@ -140,10 +150,10 @@ export async function deleteCashMovement(movementId: string) {
     await connectDB()
 
     const session = await getSession()
-    if (!session || session.role !== "admin") {
+    if (!session || !hasPermission(session, PERMISSIONS.CASH_MOVEMENTS_DELETE)) {
       return {
         success: false,
-        error: "Solo los administradores pueden eliminar movimientos",
+        error: "No tenés permiso para eliminar movimientos",
       }
     }
 

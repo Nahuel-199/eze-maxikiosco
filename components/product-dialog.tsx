@@ -26,7 +26,12 @@ import {
 } from "@/lib/actions/products"
 import { toast } from "sonner"
 import { Loader2, ScanBarcode } from "lucide-react"
-import { BarcodeScanner } from "@/components/barcode-scanner"
+import dynamic from "next/dynamic"
+
+const BarcodeScanner = dynamic(
+  () => import("@/components/barcode-scanner").then((m) => m.BarcodeScanner),
+  { ssr: false }
+)
 
 interface ProductDialogProps {
   open: boolean
@@ -60,6 +65,7 @@ export function ProductDialog({
     price: "",
     cost: "",
     stock: "",
+    min_stock: "10",
     image_url: "",
     active: true,
   })
@@ -84,6 +90,7 @@ export function ProductDialog({
               price: product.price.toString(),
               cost: product.cost?.toString() || "",
               stock: product.stock.toString(),
+              min_stock: product.min_stock?.toString() || "10",
               image_url: product.image_url || "",
               active: product.active,
             })
@@ -104,6 +111,7 @@ export function ProductDialog({
         price: "",
         cost: "",
         stock: "",
+        min_stock: "10",
         image_url: "",
         active: true,
       })
@@ -144,7 +152,7 @@ export function ProductDialog({
         price: Number(formData.price),
         cost: formData.cost ? Number(formData.cost) : undefined,
         stock: formData.stock ? Number(formData.stock) : 0,
-        min_stock: 0,
+        min_stock: formData.min_stock ? Number(formData.min_stock) : 10,
         image_url: formData.image_url || undefined,
         active: formData.active,
       }
@@ -314,18 +322,31 @@ export function ProductDialog({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="stock">Stock</Label>
-              <Input
-                id="stock"
-                type="number"
-                min="0"
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                placeholder="0"
-              />
-              <p className="text-xs text-muted-foreground">Si no se especifica, el stock será 0</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="min_stock">Stock mínimo</Label>
+                <Input
+                  id="min_stock"
+                  type="number"
+                  min="0"
+                  value={formData.min_stock}
+                  onChange={(e) => setFormData({ ...formData, min_stock: e.target.value })}
+                  placeholder="10"
+                />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground -mt-2">Se te alertará cuando el stock sea igual o menor al mínimo</p>
 
             <div className="flex items-center space-x-2">
               <Switch

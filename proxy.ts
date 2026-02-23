@@ -1,51 +1,74 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-const ADMIN_ONLY_PATHS = ["/dashboard/reports", "/dashboard/products", "/dashboard/audit", "/dashboard/usuarios"]
+// Mapeo de rutas a permisos requeridos
+const ROUTE_PERMISSIONS: Record<string, string> = {
+  "/dashboard/products": "products:view",
+  "/dashboard/reports": "reports:view",
+  "/dashboard/audit": "audit:view",
+}
+
+// Rutas exclusivas del admin (no delegables con permisos)
+const ADMIN_ONLY_PATHS = ["/dashboard/usuarios"]
+
 const EMPLOYEE_HOME = "/dashboard/pos"
 
-function getSessionRole(request: NextRequest): string | null {
+function getSession(request: NextRequest): { role: string; permissions?: string[] } | null {
   const sessionCookie = request.cookies.get("session")
   if (!sessionCookie) return null
   try {
-    const session = JSON.parse(sessionCookie.value)
-    return session.role ?? null
+    return JSON.parse(sessionCookie.value)
   } catch {
     return null
   }
 }
 
 export function proxy(request: NextRequest) {
-  const session = request.cookies.get("session")
+  const sessionCookie = request.cookies.get("session")
   const { pathname } = request.nextUrl
 
   // Public routes
   if (pathname === "/login") {
-    if (session) {
-      const role = getSessionRole(request)
-      const redirectTo = role === "admin" ? "/dashboard" : EMPLOYEE_HOME
+    if (sessionCookie) {
+      const session = getSession(request)
+      const redirectTo = session?.role === "admin" ? "/dashboard" : EMPLOYEE_HOME
       return NextResponse.redirect(new URL(redirectTo, request.url))
     }
     return NextResponse.next()
   }
 
   // Protected routes
-  if (!session && pathname !== "/login") {
+  if (!sessionCookie && pathname !== "/login") {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Role-based route protection
-  const role = getSessionRole(request)
+  const session = getSession(request)
 
-  if (role !== "admin") {
-    // Redirect employees from /dashboard (Inicio) to POS
-    if (pathname === "/dashboard") {
+  // Admin has full access
+  if (session?.role === "admin") {
+    return NextResponse.next()
+  }
+
+  // Admin-only routes (never delegable)
+  if (ADMIN_ONLY_PATHS.some((path) => pathname.startsWith(path))) {
+    return NextResponse.redirect(new URL(EMPLOYEE_HOME, request.url))
+  }
+
+  // Dashboard home requires permission
+  if (pathname === "/dashboard") {
+    if (!session?.permissions?.includes("dashboard:view")) {
       return NextResponse.redirect(new URL(EMPLOYEE_HOME, request.url))
     }
+    return NextResponse.next()
+  }
 
-    // Block access to admin-only routes
-    if (ADMIN_ONLY_PATHS.some((path) => pathname.startsWith(path))) {
-      return NextResponse.redirect(new URL(EMPLOYEE_HOME, request.url))
+  // Check route-level permissions
+  for (const [route, permission] of Object.entries(ROUTE_PERMISSIONS)) {
+    if (pathname.startsWith(route)) {
+      if (!session?.permissions?.includes(permission)) {
+        return NextResponse.redirect(new URL(EMPLOYEE_HOME, request.url))
+      }
+      return NextResponse.next()
     }
   }
 

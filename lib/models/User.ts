@@ -5,6 +5,7 @@ export interface IUser extends Document {
   password_hash: string
   full_name: string
   role: "admin" | "employee"
+  permissions: string[]
   active: boolean
   last_login?: Date
   createdAt: Date
@@ -37,6 +38,10 @@ const UserSchema = new Schema<IUser>(
         message: "{VALUE} no es un rol válido",
       },
       default: "employee",
+    },
+    permissions: {
+      type: [String],
+      default: [],
     },
     active: {
       type: Boolean,

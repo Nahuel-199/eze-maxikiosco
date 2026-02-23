@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { createUser, updateUser, getUserById } from "@/lib/actions/users"
+import { PERMISSION_GROUPS, type Permission } from "@/lib/permissions"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
@@ -44,6 +46,7 @@ export function UserDialog({
     email: "",
     password: "",
     role: "employee" as "admin" | "employee",
+    permissions: [] as string[],
     active: true,
   })
 
@@ -58,6 +61,7 @@ export function UserDialog({
               email: user.email,
               password: "",
               role: user.role,
+              permissions: user.permissions ?? [],
               active: user.active,
             })
           }
@@ -73,6 +77,7 @@ export function UserDialog({
         email: "",
         password: "",
         role: "employee",
+        permissions: [],
         active: true,
       })
       setErrors({})
@@ -102,6 +107,27 @@ export function UserDialog({
     return Object.keys(newErrors).length === 0
   }
 
+  const togglePermission = (permission: Permission) => {
+    setFormData((prev) => ({
+      ...prev,
+      permissions: prev.permissions.includes(permission)
+        ? prev.permissions.filter((p) => p !== permission)
+        : [...prev.permissions, permission],
+    }))
+  }
+
+  const toggleGroupPermissions = (groupPermissions: Permission[], checked: boolean) => {
+    setFormData((prev) => {
+      const withoutGroup = prev.permissions.filter(
+        (p) => !groupPermissions.includes(p as Permission)
+      )
+      return {
+        ...prev,
+        permissions: checked ? [...withoutGroup, ...groupPermissions] : withoutGroup,
+      }
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -117,6 +143,7 @@ export function UserDialog({
         email: formData.email.trim(),
         password: formData.password || undefined,
         role: formData.role,
+        permissions: formData.role === "employee" ? formData.permissions : [],
         active: formData.active,
       }
 
@@ -253,6 +280,66 @@ export function UserDialog({
                 />
                 <Label htmlFor="active">Usuario activo</Label>
               </div>
+
+              {/* Permisos - solo para empleados */}
+              {formData.role === "employee" && (
+                <div className="space-y-3 pt-2 border-t">
+                  <div>
+                    <Label className="text-base">Permisos</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Selecciona los permisos adicionales para este empleado. POS y Caja básica siempre están disponibles.
+                    </p>
+                  </div>
+
+                  {PERMISSION_GROUPS.map((group) => {
+                    const groupKeys = group.permissions.map((p) => p.key)
+                    const allChecked = groupKeys.every((k) => formData.permissions.includes(k))
+                    const someChecked = groupKeys.some((k) => formData.permissions.includes(k))
+
+                    return (
+                      <div key={group.label} className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`group-${group.label}`}
+                            checked={allChecked ? true : someChecked ? "indeterminate" : false}
+                            onCheckedChange={(checked) =>
+                              toggleGroupPermissions(groupKeys, !!checked)
+                            }
+                          />
+                          <Label
+                            htmlFor={`group-${group.label}`}
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            {group.label}
+                          </Label>
+                        </div>
+                        <div className="ml-6 space-y-1.5">
+                          {group.permissions.map((perm) => (
+                            <div key={perm.key} className="flex items-start space-x-2">
+                              <Checkbox
+                                id={`perm-${perm.key}`}
+                                checked={formData.permissions.includes(perm.key)}
+                                onCheckedChange={() => togglePermission(perm.key)}
+                              />
+                              <div className="grid gap-0.5 leading-none">
+                                <Label
+                                  htmlFor={`perm-${perm.key}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {perm.label}
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                  {perm.description}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2">

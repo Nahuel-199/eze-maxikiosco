@@ -14,12 +14,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { navItems } from "@/lib/nav-items"
+import { hasPermission, type Permission } from "@/lib/permissions"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface DashboardNavProps {
   user: {
     full_name: string
     email: string
     role: string
+    permissions?: string[]
   }
 }
 
@@ -33,9 +36,11 @@ export function DashboardNav({ user }: DashboardNavProps) {
     router.refresh()
   }
 
-  const filteredItems = navItems.filter(
-    (item) => !item.adminOnly || user.role === "admin"
-  )
+  const filteredItems = navItems.filter((item) => {
+    if (item.adminOnly) return user.role === "admin"
+    if (item.permission) return hasPermission(user, item.permission as Permission)
+    return true
+  })
 
   return (
     <header className="border-b bg-card sticky top-0 z-50 lg:hidden">
@@ -46,12 +51,14 @@ export function DashboardNav({ user }: DashboardNavProps) {
             <span className="text-lg sm:text-xl font-bold">Maxi-Kiosco</span>
           </Link>
 
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
             <SheetContent side="right" className="w-[280px]">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
@@ -94,6 +101,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </div>
     </header>

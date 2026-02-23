@@ -71,7 +71,7 @@ const ProductSchema = new Schema<IProduct>(
       type: Number,
       required: [true, "El stock mínimo es requerido"],
       min: [0, "El stock mínimo no puede ser negativo"],
-      default: 0,
+      default: 10,
     },
     image_url: {
       type: String,

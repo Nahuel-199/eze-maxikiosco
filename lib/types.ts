@@ -3,6 +3,7 @@ export interface User {
   email: string
   full_name: string
   role: "admin" | "employee"
+  permissions?: string[]
   active: boolean
   created_at: string
 }

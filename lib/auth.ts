@@ -29,6 +29,7 @@ export async function login(email: string, password: string) {
     email: user.email,
     full_name: user.full_name,
     role: user.role,
+    permissions: user.permissions ?? [],
   }
 
   const cookieStore = await cookies()
@@ -60,4 +61,48 @@ export async function getSession() {
   } catch {
     return null
   }
+}
+
+/**
+ * Requiere sesión autenticada. Retorna la sesión o un objeto de error.
+ */
+export async function requireSession(): Promise<
+  | { session: { id: string; email: string; full_name: string; role: string; permissions?: string[] }; error?: never }
+  | { session?: never; error: string }
+> {
+  const session = await getSession()
+  if (!session) {
+    return { error: "No autenticado" }
+  }
+  return { session }
+}
+
+/**
+ * Requiere sesión con un permiso específico. Los admins siempre pasan.
+ */
+export async function requirePermission(permission: string): Promise<
+  | { session: { id: string; email: string; full_name: string; role: string; permissions?: string[] }; error?: never }
+  | { session?: never; error: string }
+> {
+  const result = await requireSession()
+  if (result.error) return result
+  const { session } = result
+  if (session.role === "admin") return { session }
+  if (session.permissions?.includes(permission)) return { session }
+  return { error: "No tenés permiso para realizar esta acción" }
+}
+
+/**
+ * Requiere que el usuario sea admin.
+ */
+export async function requireAdmin(): Promise<
+  | { session: { id: string; email: string; full_name: string; role: string; permissions?: string[] }; error?: never }
+  | { session?: never; error: string }
+> {
+  const result = await requireSession()
+  if (result.error) return result
+  if (result.session.role !== "admin") {
+    return { error: "Se requiere rol de administrador" }
+  }
+  return { session: result.session }
 }

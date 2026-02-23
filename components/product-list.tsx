@@ -27,6 +27,7 @@ interface ProductListProps {
   onEdit: (productId: string) => void
   onRefresh: () => void
   refreshKey?: number
+  lowStock?: boolean
 }
 
 interface Product {
@@ -59,7 +60,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 const ITEMS_PER_PAGE = 20
 
-export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey }: ProductListProps) {
+export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStock }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -96,6 +97,7 @@ export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey }: Produ
           limit: ITEMS_PER_PAGE,
           sort: sortOption,
           search: debouncedSearch,
+          lowStock,
         })
 
         setProducts(result.products || [])
@@ -111,7 +113,7 @@ export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey }: Produ
     }
 
     fetchProducts()
-  }, [refreshKey, currentPage, sortOption, debouncedSearch])
+  }, [refreshKey, currentPage, sortOption, debouncedSearch, lowStock])
 
   const getCategoryName = (product: Product) => {
     return product.category?.name || "Sin categoría"

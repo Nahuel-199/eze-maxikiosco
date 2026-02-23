@@ -4,12 +4,14 @@ import { connectDB } from "@/lib/db"
 import { User } from "@/lib/models"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
+import { requireAdmin } from "@/lib/auth"
 
 export interface UserFormData {
   full_name: string
   email: string
   password?: string
   role: "admin" | "employee"
+  permissions?: string[]
   active: boolean
 }
 
@@ -34,6 +36,9 @@ const ITEMS_PER_PAGE = 20
  */
 export async function getUsers(options: GetUsersOptions = {}): Promise<GetUsersResult> {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const {
@@ -68,6 +73,7 @@ export async function getUsers(options: GetUsersOptions = {}): Promise<GetUsersR
       full_name: user.full_name,
       email: user.email,
       role: user.role,
+      permissions: user.permissions ?? [],
       active: user.active,
       last_login: user.last_login?.toISOString() || null,
       created_at: user.createdAt?.toISOString() || new Date().toISOString(),
@@ -92,6 +98,9 @@ export async function getUsers(options: GetUsersOptions = {}): Promise<GetUsersR
  */
 export async function getUserById(id: string) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const user = await User.findById(id).lean()
@@ -106,6 +115,7 @@ export async function getUserById(id: string) {
       full_name: user.full_name,
       email: user.email,
       role: user.role,
+      permissions: user.permissions ?? [],
       active: user.active,
       last_login: user.last_login?.toISOString() || null,
       created_at: user.createdAt?.toISOString() || new Date().toISOString(),
@@ -122,6 +132,9 @@ export async function getUserById(id: string) {
  */
 export async function createUser(data: UserFormData) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     if (!data.password) {
@@ -147,6 +160,7 @@ export async function createUser(data: UserFormData) {
       email: data.email,
       password_hash,
       role: data.role,
+      permissions: data.role === "admin" ? [] : (data.permissions ?? []),
       active: data.active,
     })
 
@@ -185,6 +199,9 @@ export async function createUser(data: UserFormData) {
  */
 export async function updateUser(id: string, data: UserFormData) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     const user = await User.findById(id)
@@ -212,6 +229,7 @@ export async function updateUser(id: string, data: UserFormData) {
     user.full_name = data.full_name
     user.email = data.email
     user.role = data.role
+    user.permissions = data.role === "admin" ? [] : (data.permissions ?? [])
     user.active = data.active
 
     // Solo actualizar password si se proporcionó
@@ -256,6 +274,9 @@ export async function updateUser(id: string, data: UserFormData) {
  */
 export async function deleteUser(id: string) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     const user = await User.findById(id)

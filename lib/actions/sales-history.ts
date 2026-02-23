@@ -2,6 +2,8 @@
 
 import { connectDB } from "@/lib/db"
 import { Sale } from "@/lib/models"
+import { requirePermission } from "@/lib/auth"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export interface SalesHistoryFilters {
   start_date?: string
@@ -74,6 +76,15 @@ function buildMatchStage(filters: SalesHistoryFilters) {
 export async function getSalesHistory(
   filters: SalesHistoryFilters = {}
 ): Promise<SalesHistoryResult> {
+  const auth = await requirePermission(PERMISSIONS.REPORTS_VIEW)
+  if (auth.error) {
+    return {
+      items: [],
+      pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      summary: { totalAmount: 0, count: 0, avgTicket: 0, productsSold: 0 },
+    }
+  }
+
   await connectDB()
 
   const page = filters.page || 1
@@ -172,6 +183,9 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 export async function getSalesForExport(
   filters: SalesHistoryFilters = {}
 ): Promise<SaleExportRow[]> {
+  const auth = await requirePermission(PERMISSIONS.REPORTS_EXPORT)
+  if (auth.error) return []
+
   await connectDB()
 
   const match = buildMatchStage(filters)

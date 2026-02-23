@@ -173,7 +173,7 @@ export function SalesReports({ initialData }: SalesReportsProps) {
       const datePart = startDate && endDate
         ? `${startDate}_a_${endDate}`
         : new Date().toLocaleDateString("es-AR").replace(/\//g, "-")
-      exportSalesToExcel(rows, `ventas_${datePart}`)
+      await exportSalesToExcel(rows, `ventas_${datePart}`)
     } catch (error) {
       console.error("Error exporting:", error)
     } finally {

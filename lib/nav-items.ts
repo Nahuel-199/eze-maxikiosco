@@ -8,12 +8,14 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react"
+import type { Permission } from "@/lib/permissions"
 
 export interface NavItem {
   label: string
   href: string
   icon: LucideIcon
   adminOnly: boolean
+  permission?: Permission
 }
 
 export const navItems: NavItem[] = [
@@ -21,7 +23,8 @@ export const navItems: NavItem[] = [
     label: "Inicio",
     href: "/dashboard",
     icon: LayoutDashboard,
-    adminOnly: true,
+    adminOnly: false,
+    permission: "dashboard:view",
   },
   {
     label: "Punto de Venta",
@@ -39,13 +42,15 @@ export const navItems: NavItem[] = [
     label: "Reportes",
     href: "/dashboard/reports",
     icon: BarChart3,
-    adminOnly: true,
+    adminOnly: false,
+    permission: "reports:view",
   },
   {
     label: "Productos",
     href: "/dashboard/products",
     icon: Package,
-    adminOnly: true,
+    adminOnly: false,
+    permission: "products:view",
   },
   {
     label: "Usuarios",
@@ -57,6 +62,7 @@ export const navItems: NavItem[] = [
     label: "Auditoría",
     href: "/dashboard/audit",
     icon: ShieldCheck,
-    adminOnly: true,
+    adminOnly: false,
+    permission: "audit:view",
   },
 ]

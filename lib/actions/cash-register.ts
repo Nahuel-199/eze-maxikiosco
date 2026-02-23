@@ -4,7 +4,7 @@ import mongoose from "mongoose"
 import { connectDB } from "@/lib/db"
 import { CashRegister, Sale, CashMovement } from "@/lib/models"
 import { revalidatePath } from "next/cache"
-import { getSession } from "@/lib/auth"
+import { getSession, requireSession } from "@/lib/auth"
 import type { CashRegister as CashRegisterType, CashRegisterSummary } from "@/lib/types"
 
 /**
@@ -39,10 +39,13 @@ export interface CashRegisterHistoryFilters {
  */
 export async function openCashRegister(data: OpenCashRegisterData) {
   try {
+    const auth = await requireSession()
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
-    const session = await getSession()
-    const userId = session?.id
+    const session = auth.session
+    const userId = session.id
 
     // Solo usar userId si es un ObjectId válido de MongoDB
     const validUserId = isValidObjectId(userId) ? userId : undefined
@@ -91,6 +94,9 @@ export async function openCashRegister(data: OpenCashRegisterData) {
  */
 export async function getActiveCashRegister(): Promise<CashRegisterType | null> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return null
+
     await connectDB()
 
     const cashRegister = await CashRegister.findOne({ status: "open" })
@@ -128,6 +134,9 @@ export async function getCashRegisterSummary(
   cashRegisterId: string
 ): Promise<CashRegisterSummary | null> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return null
+
     await connectDB()
 
     const cashRegister = await CashRegister.findById(cashRegisterId).lean()
@@ -204,10 +213,13 @@ export async function getCashRegisterSummary(
  */
 export async function closeCashRegister(data: CloseCashRegisterData) {
   try {
+    const auth = await requireSession()
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
-    const session = await getSession()
-    const userId = session?.id
+    const session = auth.session
+    const userId = session.id
     const validUserId = isValidObjectId(userId) ? userId : undefined
 
     const cashRegister = await CashRegister.findOne({ status: "open" })
@@ -272,6 +284,9 @@ export async function closeCashRegister(data: CloseCashRegisterData) {
  */
 export async function getCashRegisterHistory(filters: CashRegisterHistoryFilters = {}) {
   try {
+    const auth = await requireSession()
+    if (auth.error) return { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } }
+
     await connectDB()
 
     const { operator_name, start_date, end_date, status = "all", page = 1, limit = 10 } = filters
@@ -346,6 +361,9 @@ export async function getCashRegisterHistory(filters: CashRegisterHistoryFilters
  */
 export async function getCashRegisterDetail(cashRegisterId: string) {
   try {
+    const auth = await requireSession()
+    if (auth.error) return null
+
     await connectDB()
 
     const summary = await getCashRegisterSummary(cashRegisterId)

@@ -1,18 +1,23 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Search, ScanBarcode } from "lucide-react"
+import { Plus, Search, ScanBarcode, AlertTriangle } from "lucide-react"
 import { ProductList } from "@/components/product-list"
 import { CategoryList } from "@/components/category-list"
 import { ProductDialog } from "@/components/product-dialog"
 import { CategoryDialog } from "@/components/category-dialog"
 import { useBarcodeScanner } from "@/hooks/use-barcode-scanner"
+import { getLowStockCount } from "@/lib/actions/products"
 
 export function ProductManagement() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [showProductDialog, setShowProductDialog] = useState(false)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
@@ -20,6 +25,13 @@ export function ProductManagement() {
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [activeTab, setActiveTab] = useState("products")
+  const [lowStockFilter, setLowStockFilter] = useState(searchParams.get("lowStock") === "true")
+  const [lowStockCount, setLowStockCount] = useState(0)
+
+  // Cargar conteo de stock bajo
+  useEffect(() => {
+    getLowStockCount().then(setLowStockCount).catch(() => setLowStockCount(0))
+  }, [refreshKey])
 
   // Función para manejar el escaneo de código de barras
   const handleBarcodeScan = useCallback((barcode: string) => {
@@ -68,6 +80,17 @@ export function ProductManagement() {
     setRefreshKey((prev) => prev + 1)
   }
 
+  const toggleLowStockFilter = () => {
+    setLowStockFilter((prev) => {
+      const next = !prev
+      // Limpiar query param de la URL
+      if (!next && searchParams.get("lowStock")) {
+        router.replace("/dashboard/products", { scroll: false })
+      }
+      return next
+    })
+  }
+
   return (
     <div className="container mx-auto p-4 sm:p-6">
       <div className="mb-6">
@@ -82,35 +105,79 @@ export function ProductManagement() {
         </TabsList>
 
         <TabsContent value="products" className="space-y-4">
+          {/* Banner de alerta de stock bajo */}
+          {lowStockCount > 0 && !lowStockFilter && (
+            <button
+              onClick={toggleLowStockFilter}
+              className="w-full flex items-center gap-3 p-3 sm:p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors text-left dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 dark:hover:bg-amber-950/50"
+            >
+              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">
+                  {lowStockCount === 1
+                    ? "1 producto con stock bajo"
+                    : `${lowStockCount} productos con stock bajo`}
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300/80 mt-0.5">
+                  Hacé click para ver los productos que necesitan reposición
+                </p>
+              </div>
+              <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 shrink-0">
+                {lowStockCount}
+              </Badge>
+            </button>
+          )}
+
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <CardTitle className="text-lg sm:text-xl">Productos</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Gestiona todos los productos del inventario</CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">
+                    {lowStockFilter ? "Productos con stock bajo" : "Productos"}
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    {lowStockFilter
+                      ? "Productos que necesitan reposición"
+                      : "Gestiona todos los productos del inventario"}
+                  </CardDescription>
                 </div>
-                <Button onClick={() => setShowProductDialog(true)} className="w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Producto
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {lowStockFilter ? (
+                    <Button
+                      variant="outline"
+                      onClick={toggleLowStockFilter}
+                      className="w-full sm:w-auto"
+                    >
+                      Ver todos
+                    </Button>
+                  ) : (
+                    <Button onClick={() => setShowProductDialog(true)} className="w-full sm:w-auto">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nuevo Producto
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar producto o escanear código de barras..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                <ScanBarcode className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-              </div>
+              {!lowStockFilter && (
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar producto o escanear código de barras..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  <ScanBarcode className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                </div>
+              )}
               <ProductList
-                searchTerm={searchTerm}
+                searchTerm={lowStockFilter ? "" : searchTerm}
                 onEdit={handleEditProduct}
                 onRefresh={handleProductSuccess}
                 refreshKey={refreshKey}
+                lowStock={lowStockFilter}
               />
             </CardContent>
           </Card>

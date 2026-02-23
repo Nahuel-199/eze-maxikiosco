@@ -4,7 +4,7 @@ import mongoose from "mongoose"
 import { connectDB } from "@/lib/db"
 import { Sale, Product, CashRegister } from "@/lib/models"
 import { revalidatePath } from "next/cache"
-import { getSession } from "@/lib/auth"
+import { getSession, requireSession } from "@/lib/auth"
 import type { Sale as SaleType, SaleItem } from "@/lib/types"
 
 /**
@@ -34,6 +34,9 @@ export interface CreateSaleData {
  * Usa transacción de MongoDB para garantizar consistencia
  */
 export async function createSale(data: CreateSaleData) {
+  const auth = await requireSession()
+  if (auth.error) return { success: false, error: auth.error }
+
   await connectDB()
 
   const dbSession = await mongoose.startSession()
@@ -141,6 +144,9 @@ export async function createSale(data: CreateSaleData) {
  */
 export async function getSalesByCashRegister(cashRegisterId: string): Promise<SaleType[]> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return []
+
     await connectDB()
 
     const sales = await Sale.find({ cash_register_id: cashRegisterId })
@@ -176,6 +182,9 @@ export async function getSalesByCashRegister(cashRegisterId: string): Promise<Sa
  */
 export async function getActiveRegisterSales(): Promise<SaleType[]> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return []
+
     await connectDB()
 
     const cashRegister = await CashRegister.findOne({ status: "open" })
@@ -197,6 +206,9 @@ export async function getProductsSoldByRegister(
   cashRegisterId: string
 ): Promise<{ name: string; quantity: number; total: number }[]> {
   try {
+    const auth = await requireSession()
+    if (auth.error) return []
+
     await connectDB()
 
     const sales = await Sale.find({ cash_register_id: cashRegisterId }).lean()
@@ -226,6 +238,9 @@ export async function getProductsSoldByRegister(
  */
 export async function getActiveRegisterStats() {
   try {
+    const auth = await requireSession()
+    if (auth.error) return null
+
     await connectDB()
 
     const cashRegister = await CashRegister.findOne({ status: "open" })

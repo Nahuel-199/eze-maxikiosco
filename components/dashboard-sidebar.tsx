@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { logout } from "@/lib/auth"
 import { navItems } from "@/lib/nav-items"
+import { hasPermission, type Permission } from "@/lib/permissions"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface DashboardSidebarProps {
   user: {
     full_name: string
     email: string
     role: string
+    permissions?: string[]
   }
 }
 
@@ -26,9 +29,11 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     router.refresh()
   }
 
-  const filteredItems = navItems.filter(
-    (item) => !item.adminOnly || user.role === "admin"
-  )
+  const filteredItems = navItems.filter((item) => {
+    if (item.adminOnly) return user.role === "admin"
+    if (item.permission) return hasPermission(user, item.permission as Permission)
+    return true
+  })
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard"
@@ -68,12 +73,15 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
 
       {/* User info + Logout */}
       <div className="border-t border-sidebar-border p-4">
-        <div className="mb-3 px-2">
-          <p className="text-sm text-sidebar-foreground/60">Bienvenido,</p>
-          <p className="text-sm font-medium truncate">{user.full_name}</p>
-          <p className="text-xs text-sidebar-foreground/60 capitalize">
-            {user.role}
-          </p>
+        <div className="mb-3 px-2 flex items-start justify-between">
+          <div>
+            <p className="text-sm text-sidebar-foreground/60">Bienvenido,</p>
+            <p className="text-sm font-medium truncate">{user.full_name}</p>
+            <p className="text-xs text-sidebar-foreground/60 capitalize">
+              {user.role}
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
         <Button
           variant="outline"

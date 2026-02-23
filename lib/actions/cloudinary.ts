@@ -1,6 +1,8 @@
 "use server"
 
 import cloudinary from "@/lib/cloudinary"
+import { requirePermission } from "@/lib/auth"
+import { PERMISSIONS } from "@/lib/permissions"
 
 /**
  * Sube una imagen a Cloudinary
@@ -11,6 +13,9 @@ export async function uploadImage(
   formData: FormData
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
+    const auth = await requirePermission(PERMISSIONS.PRODUCTS_EDIT)
+    if (auth.error) return { success: false, error: auth.error }
+
     const file = formData.get("file") as File
 
     if (!file) {
@@ -81,6 +86,9 @@ export async function deleteImage(
   imageUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const auth = await requirePermission(PERMISSIONS.PRODUCTS_EDIT)
+    if (auth.error) return { success: false, error: auth.error }
+
     if (!imageUrl) {
       return { success: false, error: "No se proporcionó URL de imagen" }
     }

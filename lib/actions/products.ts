@@ -5,6 +5,8 @@ import { connectDB } from "@/lib/db"
 import { Product, Category } from "@/lib/models"
 import { deleteImage } from "./cloudinary"
 import { revalidatePath } from "next/cache"
+import { requireSession, requirePermission } from "@/lib/auth"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export interface ProductFormData {
   name: string
@@ -33,6 +35,7 @@ export interface GetProductsOptions {
   limit?: number
   sort?: SortOption
   search?: string
+  lowStock?: boolean
 }
 
 export interface GetProductsResult {
@@ -57,6 +60,9 @@ const SORT_CONFIG: Record<SortOption, Record<string, 1 | -1>> = {
  */
 export async function getProducts(options: GetProductsOptions = {}): Promise<GetProductsResult> {
   try {
+    const auth = await requireSession()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const {
@@ -64,6 +70,7 @@ export async function getProducts(options: GetProductsOptions = {}): Promise<Get
       limit = 20,
       sort = "newest",
       search = "",
+      lowStock = false,
     } = options
 
     // Construir filtro de búsqueda
@@ -77,6 +84,10 @@ export async function getProducts(options: GetProductsOptions = {}): Promise<Get
         { barcode: searchRegex },
         { sku: searchRegex },
       ]
+    }
+
+    if (lowStock) {
+      filter.$expr = { $lte: ["$stock", "$min_stock"] }
     }
 
     // Obtener total para paginación
@@ -132,6 +143,9 @@ export async function getProducts(options: GetProductsOptions = {}): Promise<Get
  */
 export async function getAllProducts() {
   try {
+    const auth = await requireSession()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const products = await Product.find({ active: true })
@@ -167,6 +181,9 @@ export async function getAllProducts() {
  */
 export async function getProductById(id: string) {
   try {
+    const auth = await requireSession()
+    if (auth.error) throw new Error(auth.error)
+
     await connectDB()
 
     const product = await Product.findById(id).populate("category_id").lean()
@@ -203,6 +220,9 @@ export async function getProductById(id: string) {
  */
 export async function createProduct(data: ProductFormData) {
   try {
+    const auth = await requirePermission(PERMISSIONS.PRODUCTS_CREATE)
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     // Validar que la categoría existe si se proporciona
@@ -283,6 +303,9 @@ export async function createProduct(data: ProductFormData) {
  */
 export async function updateProduct(id: string, data: ProductFormData) {
   try {
+    const auth = await requirePermission(PERMISSIONS.PRODUCTS_EDIT)
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     const product = await Product.findById(id)
@@ -384,6 +407,9 @@ export async function updateProduct(id: string, data: ProductFormData) {
  */
 export async function deleteProduct(id: string) {
   try {
+    const auth = await requirePermission(PERMISSIONS.PRODUCTS_DELETE)
+    if (auth.error) return { success: false, error: auth.error }
+
     await connectDB()
 
     const product = await Product.findById(id)
@@ -422,10 +448,33 @@ export async function deleteProduct(id: string) {
 }
 
 /**
+ * Obtiene la cantidad de productos con stock bajo
+ */
+export async function getLowStockCount(): Promise<number> {
+  try {
+    const auth = await requireSession()
+    if (auth.error) return 0
+
+    await connectDB()
+
+    return await Product.countDocuments({
+      active: true,
+      $expr: { $lte: ["$stock", "$min_stock"] },
+    })
+  } catch (error) {
+    console.error("Error al obtener conteo de stock bajo:", error)
+    return 0
+  }
+}
+
+/**
  * Obtiene todas las categorías para el selector
  */
 export async function getCategories() {
   try {
+    const auth = await requireSession()
+    if (auth.error) return []
+
     await connectDB()
 
     const categories = await Category.find({ active: true })
