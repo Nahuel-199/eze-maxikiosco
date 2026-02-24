@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Store, LogOut, Menu } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { logout } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Sheet,
   SheetContent,
@@ -71,8 +72,14 @@ export function DashboardNav({ user }: DashboardNavProps) {
       <header className="border-b bg-card sticky top-0 z-50 lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <span className="text-lg font-bold">Maxi-Kiosco</span>
+            <Image
+              src="/logo360.png"
+              alt="Controla360 Logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
+            <span className="text-lg font-bold">Controla360</span>
           </Link>
 
           <div className="flex items-center gap-1">
@@ -86,8 +93,14 @@ export function DashboardNav({ user }: DashboardNavProps) {
               <SheetContent side="right" className="w-[280px]">
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">
-                    <Store className="h-5 w-5 text-primary" />
-                    Maxi-Kiosco Admin
+                    <Image
+                      src="/logo360.png"
+                      alt="Controla360 Logo"
+                      width={28}
+                      height={28}
+                      className="rounded-lg"
+                    />
+                    Controla360
                   </SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-4">
