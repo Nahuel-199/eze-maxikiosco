@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login } from "@/lib/auth"
-import { Store, Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
+import Image from "next/image"
 
 export function LoginForm() {
   const router = useRouter()
@@ -43,11 +44,15 @@ export function LoginForm() {
     <Card className="w-full max-w-md shadow-xl mx-4 sm:mx-0">
       <CardHeader className="space-y-2 text-center px-4 sm:px-6 pt-6 sm:pt-8">
         <div className="flex justify-center mb-2">
-          <div className="p-2 sm:p-3 bg-primary/10 rounded-full">
-            <Store className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-          </div>
+          <Image
+            src="/logo360.png"
+            alt="Controla360 Logo"
+            width={64}
+            height={64}
+            className="rounded-lg"
+          />
         </div>
-        <CardTitle className="text-xl sm:text-2xl font-bold">Maxi-Kiosco Admin</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl font-bold">Controla360</CardTitle>
         <CardDescription className="text-xs sm:text-sm">Ingresa tus credenciales para acceder al sistema</CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8">
