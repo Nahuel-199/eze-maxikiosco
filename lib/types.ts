@@ -82,13 +82,20 @@ export interface CashRegisterSummary {
   movementsCount: number
 }
 
+export interface PaymentDetails {
+  cash_amount: number
+  card_amount: number
+  transfer_amount: number
+}
+
 export interface Sale {
   id: string
   cash_register_id: string
   user_id: string
   user?: User
   total: number
-  payment_method: "cash" | "card" | "transfer"
+  payment_method: "cash" | "card" | "transfer" | "mixed"
+  payment_details?: PaymentDetails
   created_at: string
   items?: SaleItem[]
 }

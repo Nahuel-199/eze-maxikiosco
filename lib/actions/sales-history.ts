@@ -8,7 +8,7 @@ import { PERMISSIONS } from "@/lib/permissions"
 export interface SalesHistoryFilters {
   start_date?: string
   end_date?: string
-  payment_method?: "cash" | "card" | "transfer" | "all"
+  payment_method?: "cash" | "card" | "transfer" | "mixed" | "all"
   product_name?: string
   page?: number
   limit?: number
@@ -17,7 +17,7 @@ export interface SalesHistoryFilters {
 export interface SaleHistoryItem {
   id: string
   total: number
-  payment_method: "cash" | "card" | "transfer"
+  payment_method: "cash" | "card" | "transfer" | "mixed"
   items: {
     product_name: string
     quantity: number

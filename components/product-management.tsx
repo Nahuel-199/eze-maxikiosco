@@ -7,13 +7,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Search, ScanBarcode, AlertTriangle } from "lucide-react"
+import { Plus, Search, ScanBarcode, AlertTriangle, Filter } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { ProductList } from "@/components/product-list"
 import { CategoryList } from "@/components/category-list"
 import { ProductDialog } from "@/components/product-dialog"
 import { CategoryDialog } from "@/components/category-dialog"
 import { useBarcodeScanner } from "@/hooks/use-barcode-scanner"
-import { getLowStockCount } from "@/lib/actions/products"
+import { getLowStockCount, getCategories } from "@/lib/actions/products"
 
 export function ProductManagement() {
   const searchParams = useSearchParams()
@@ -27,10 +34,13 @@ export function ProductManagement() {
   const [activeTab, setActiveTab] = useState("products")
   const [lowStockFilter, setLowStockFilter] = useState(searchParams.get("lowStock") === "true")
   const [lowStockCount, setLowStockCount] = useState(0)
+  const [selectedCategory, setSelectedCategory] = useState<string>("")
+  const [categories, setCategories] = useState<{ id: string; name: string; icon?: string }[]>([])
 
-  // Cargar conteo de stock bajo
+  // Cargar conteo de stock bajo y categorías
   useEffect(() => {
     getLowStockCount().then(setLowStockCount).catch(() => setLowStockCount(0))
+    getCategories().then(setCategories).catch(() => setCategories([]))
   }, [refreshKey])
 
   // Función para manejar el escaneo de código de barras
@@ -161,15 +171,33 @@ export function ProductManagement() {
             </CardHeader>
             <CardContent>
               {!lowStockFilter && (
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar producto o escanear código de barras..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-10"
-                  />
-                  <ScanBarcode className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar producto o escanear código de barras..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-10"
+                    />
+                    <ScanBarcode className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                  </div>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Todas las categorías" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las categorías</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.icon ? `${cat.icon} ` : ""}{cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
               <ProductList
@@ -178,6 +206,7 @@ export function ProductManagement() {
                 onRefresh={handleProductSuccess}
                 refreshKey={refreshKey}
                 lowStock={lowStockFilter}
+                categoryId={selectedCategory && selectedCategory !== "all" ? selectedCategory : undefined}
               />
             </CardContent>
           </Card>

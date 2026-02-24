@@ -153,16 +153,22 @@ export async function getCashRegisterSummary(
     let salesTransfer = 0
 
     for (const sale of sales) {
-      switch (sale.payment_method) {
-        case "cash":
-          salesCash += sale.total
-          break
-        case "card":
-          salesCard += sale.total
-          break
-        case "transfer":
-          salesTransfer += sale.total
-          break
+      if (sale.payment_method === "mixed" && sale.payment_details) {
+        salesCash += sale.payment_details.cash_amount || 0
+        salesCard += sale.payment_details.card_amount || 0
+        salesTransfer += sale.payment_details.transfer_amount || 0
+      } else {
+        switch (sale.payment_method) {
+          case "cash":
+            salesCash += sale.total
+            break
+          case "card":
+            salesCard += sale.total
+            break
+          case "transfer":
+            salesTransfer += sale.total
+            break
+        }
       }
     }
 

@@ -50,12 +50,14 @@ const PAYMENT_LABELS: Record<string, string> = {
   cash: "Efectivo",
   card: "Tarjeta",
   transfer: "Transferencia",
+  mixed: "Pago Mixto",
 }
 
 const PAYMENT_COLORS: Record<string, string> = {
   cash: "bg-green-100 text-green-800",
   card: "bg-blue-100 text-blue-800",
   transfer: "bg-purple-100 text-purple-800",
+  mixed: "bg-orange-100 text-orange-800",
 }
 
 function formatCurrency(value: number) {
@@ -260,6 +262,7 @@ export function SalesReports({ initialData }: SalesReportsProps) {
                   <SelectItem value="cash">Efectivo</SelectItem>
                   <SelectItem value="card">Tarjeta</SelectItem>
                   <SelectItem value="transfer">Transferencia</SelectItem>
+                  <SelectItem value="mixed">Pago Mixto</SelectItem>
                 </SelectContent>
               </Select>
             </div>

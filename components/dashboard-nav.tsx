@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Store, LogOut, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { logout } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -26,6 +27,11 @@ interface DashboardNavProps {
   }
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  employee: "Empleado",
+}
+
 export function DashboardNav({ user }: DashboardNavProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -43,12 +49,30 @@ export function DashboardNav({ user }: DashboardNavProps) {
   })
 
   return (
-    <header className="border-b bg-card sticky top-0 z-50 lg:hidden">
-      <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-        <div className="flex items-center justify-between">
+    <>
+      {/* Desktop navbar */}
+      <header className="hidden lg:block border-b bg-card sticky top-0 z-30 pl-16">
+        <div className="flex h-14 items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">Bienvenido,</span>
+            <span className="text-sm font-semibold">{user.full_name}</span>
+            <Badge
+              variant={user.role === "admin" ? "default" : "secondary"}
+              className="text-[10px] uppercase tracking-wider"
+            >
+              {ROLE_LABELS[user.role] || user.role}
+            </Badge>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Mobile navbar */}
+      <header className="border-b bg-card sticky top-0 z-50 lg:hidden">
+        <div className="flex h-14 items-center justify-between px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Store className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <span className="text-lg sm:text-xl font-bold">Maxi-Kiosco</span>
+            <Store className="h-5 w-5 text-primary" />
+            <span className="text-lg font-bold">Maxi-Kiosco</span>
           </Link>
 
           <div className="flex items-center gap-1">
@@ -59,51 +83,57 @@ export function DashboardNav({ user }: DashboardNavProps) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-            <SheetContent side="right" className="w-[280px]">
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Store className="h-5 w-5 text-primary" />
-                  Maxi-Kiosco Admin
-                </SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Bienvenido,</p>
-                  <p className="font-medium">{user.full_name}</p>
-                  <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-                </div>
-                <nav className="space-y-2">
-                  {filteredItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-muted transition-colors"
-                      onClick={() => setOpen(false)}
+              <SheetContent side="right" className="w-[280px]">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <Store className="h-5 w-5 text-primary" />
+                    Maxi-Kiosco Admin
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{user.full_name}</p>
+                      <Badge
+                        variant={user.role === "admin" ? "default" : "secondary"}
+                        className="text-[10px] uppercase tracking-wider mt-1"
+                      >
+                        {ROLE_LABELS[user.role] || user.role}
+                      </Badge>
+                    </div>
+                  </div>
+                  <nav className="space-y-2">
+                    {filteredItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setOpen(false)}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+                  <div className="pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setOpen(false)
+                        handleLogout()
+                      }}
                     >
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-                <div className="pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      setOpen(false)
-                      handleLogout()
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Cerrar Sesión
-                  </Button>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar Sesión
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   )
 }

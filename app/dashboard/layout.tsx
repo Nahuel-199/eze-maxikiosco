@@ -18,7 +18,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-background">
       <DashboardSidebar user={session} />
       <DashboardNav user={session} />
-      <main className="lg:pl-64">{children}</main>
+      <main className="lg:pl-16">{children}</main>
     </div>
   )
 }

@@ -23,10 +23,17 @@ export interface SaleItemData {
   subtotal: number
 }
 
+export interface PaymentDetailsData {
+  cash_amount: number
+  card_amount: number
+  transfer_amount: number
+}
+
 export interface CreateSaleData {
   items: SaleItemData[]
   total: number
-  payment_method: "cash" | "card" | "transfer"
+  payment_method: "cash" | "card" | "transfer" | "mixed"
+  payment_details?: PaymentDetailsData
 }
 
 /**
@@ -83,18 +90,19 @@ export async function createSale(data: CreateSaleData) {
       subtotal: item.subtotal,
     }))
 
-    const [sale] = await Sale.create(
-      [
-        {
-          cash_register_id: cashRegister._id,
-          user_id: validUserId ? new mongoose.Types.ObjectId(validUserId) : placeholderUserId,
-          total: data.total,
-          payment_method: data.payment_method,
-          items: saleItems,
-        },
-      ],
-      { session: dbSession }
-    )
+    const saleDoc: any = {
+      cash_register_id: cashRegister._id,
+      user_id: validUserId ? new mongoose.Types.ObjectId(validUserId) : placeholderUserId,
+      total: data.total,
+      payment_method: data.payment_method,
+      items: saleItems,
+    }
+
+    if (data.payment_method === "mixed" && data.payment_details) {
+      saleDoc.payment_details = data.payment_details
+    }
+
+    const [sale] = await Sale.create([saleDoc], { session: dbSession })
 
     // Actualizar stock de cada producto
     for (const item of data.items) {
@@ -159,6 +167,13 @@ export async function getSalesByCashRegister(cashRegisterId: string): Promise<Sa
       user_id: sale.user_id.toString(),
       total: sale.total,
       payment_method: sale.payment_method,
+      payment_details: sale.payment_details
+        ? {
+            cash_amount: sale.payment_details.cash_amount || 0,
+            card_amount: sale.payment_details.card_amount || 0,
+            transfer_amount: sale.payment_details.transfer_amount || 0,
+          }
+        : undefined,
       created_at: sale.createdAt.toISOString(),
       items: sale.items.map((item) => ({
         id: item._id?.toString() || "",
@@ -255,16 +270,22 @@ export async function getActiveRegisterStats() {
     let transferTotal = 0
 
     for (const sale of sales) {
-      switch (sale.payment_method) {
-        case "cash":
-          cashTotal += sale.total
-          break
-        case "card":
-          cardTotal += sale.total
-          break
-        case "transfer":
-          transferTotal += sale.total
-          break
+      if (sale.payment_method === "mixed" && sale.payment_details) {
+        cashTotal += sale.payment_details.cash_amount || 0
+        cardTotal += sale.payment_details.card_amount || 0
+        transferTotal += sale.payment_details.transfer_amount || 0
+      } else {
+        switch (sale.payment_method) {
+          case "cash":
+            cashTotal += sale.total
+            break
+          case "card":
+            cardTotal += sale.total
+            break
+          case "transfer":
+            transferTotal += sale.total
+            break
+        }
       }
     }
 

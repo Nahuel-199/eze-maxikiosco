@@ -36,6 +36,7 @@ export interface GetProductsOptions {
   sort?: SortOption
   search?: string
   lowStock?: boolean
+  categoryId?: string
 }
 
 export interface GetProductsResult {
@@ -71,10 +72,15 @@ export async function getProducts(options: GetProductsOptions = {}): Promise<Get
       sort = "newest",
       search = "",
       lowStock = false,
+      categoryId,
     } = options
 
     // Construir filtro de búsqueda
     const filter: any = { active: true }
+
+    if (categoryId) {
+      filter.category_id = categoryId
+    }
 
     if (search.trim()) {
       const searchRegex = new RegExp(search.trim(), "i")

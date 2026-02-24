@@ -28,6 +28,7 @@ interface ProductListProps {
   onRefresh: () => void
   refreshKey?: number
   lowStock?: boolean
+  categoryId?: string
 }
 
 interface Product {
@@ -60,7 +61,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 const ITEMS_PER_PAGE = 20
 
-export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStock }: ProductListProps) {
+export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStock, categoryId }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -86,6 +87,11 @@ export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStoc
     return () => clearTimeout(timer)
   }, [searchTerm])
 
+  // Reset a página 1 cuando cambia la categoría
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [categoryId])
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
@@ -98,6 +104,7 @@ export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStoc
           sort: sortOption,
           search: debouncedSearch,
           lowStock,
+          categoryId,
         })
 
         setProducts(result.products || [])
@@ -113,7 +120,7 @@ export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStoc
     }
 
     fetchProducts()
-  }, [refreshKey, currentPage, sortOption, debouncedSearch, lowStock])
+  }, [refreshKey, currentPage, sortOption, debouncedSearch, lowStock, categoryId])
 
   const getCategoryName = (product: Product) => {
     return product.category?.name || "Sin categoría"

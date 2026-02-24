@@ -132,7 +132,7 @@ export function AuditPanel() {
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
+    <div className="container mx-auto p-4 sm:p-6">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2">
           <ClipboardCheck className="h-7 w-7" />

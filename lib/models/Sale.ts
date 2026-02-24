@@ -10,13 +10,20 @@ export interface ISaleItem {
   subtotal: number
 }
 
+export interface IPaymentDetails {
+  cash_amount: number
+  card_amount: number
+  transfer_amount: number
+}
+
 export interface ISale extends Document {
   cash_register_id: mongoose.Types.ObjectId
   cashRegister?: ICashRegister
   user_id: mongoose.Types.ObjectId
   user?: IUser
   total: number
-  payment_method: "cash" | "card" | "transfer"
+  payment_method: "cash" | "card" | "transfer" | "mixed"
+  payment_details?: IPaymentDetails
   items: ISaleItem[]
   createdAt: Date
   updatedAt: Date
@@ -79,10 +86,33 @@ const SaleSchema = new Schema<ISale>(
     payment_method: {
       type: String,
       enum: {
-        values: ["cash", "card", "transfer"],
+        values: ["cash", "card", "transfer", "mixed"],
         message: "{VALUE} no es un método de pago válido",
       },
       required: [true, "El método de pago es requerido"],
+    },
+    payment_details: {
+      cash_amount: {
+        type: Number,
+        min: [0, "El monto en efectivo no puede ser negativo"],
+        default: 0,
+        get: (v: number) => Number((v || 0).toFixed(2)),
+        set: (v: number) => Number((v || 0).toFixed(2)),
+      },
+      card_amount: {
+        type: Number,
+        min: [0, "El monto en tarjeta no puede ser negativo"],
+        default: 0,
+        get: (v: number) => Number((v || 0).toFixed(2)),
+        set: (v: number) => Number((v || 0).toFixed(2)),
+      },
+      transfer_amount: {
+        type: Number,
+        min: [0, "El monto en transferencia no puede ser negativo"],
+        default: 0,
+        get: (v: number) => Number((v || 0).toFixed(2)),
+        set: (v: number) => Number((v || 0).toFixed(2)),
+      },
     },
     items: {
       type: [SaleItemSchema],
@@ -139,6 +169,27 @@ SaleSchema.pre("save", function () {
   }
 })
 
+// Validar payment_details para pagos mixtos
+SaleSchema.pre("save", function () {
+  if (this.payment_method === "mixed") {
+    if (!this.payment_details) {
+      throw new Error("Los pagos mixtos requieren el detalle de montos por método")
+    }
+    const detailTotal = Number(
+      (
+        (this.payment_details.cash_amount || 0) +
+        (this.payment_details.card_amount || 0) +
+        (this.payment_details.transfer_amount || 0)
+      ).toFixed(2)
+    )
+    if (Math.abs(this.total - detailTotal) > 0.01) {
+      throw new Error(
+        `La suma de los montos del pago mixto ($${detailTotal}) no coincide con el total ($${this.total})`
+      )
+    }
+  }
+})
+
 // Validar que la caja esté abierta antes de crear una venta
 SaleSchema.pre("save", async function () {
   if (!this.isNew) return
@@ -159,7 +210,11 @@ SaleSchema.pre("save", async function () {
 })
 
 // Prevenir la recreación del modelo en hot reload
-const Sale: Model<ISale> =
-  mongoose.models.Sale || mongoose.model<ISale>("Sale", SaleSchema)
+// Usar deleteModel para limpiar modelo viejo si el schema cambió
+let Sale: Model<ISale>
+if (mongoose.models.Sale) {
+  mongoose.deleteModel("Sale")
+}
+Sale = mongoose.model<ISale>("Sale", SaleSchema)
 
 export default Sale

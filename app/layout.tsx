@@ -9,25 +9,33 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Maxi-kiosco',
-  description: 'Administrador de maxi kiosco',
-  generator: 'Maxi-kiosco',
+  title: 'Controla360 | Sistema de gestion de comercios',
+  description:
+    'Software de gestion para comercios, maxikioscos. Control de stock, punto de venta, reportes y mas. Sin instalacion, desde tu celular o computadora.',
+  keywords: [
+    'sistema para kioscos',
+    'software para maxikiosco',
+    'control de stock kiosco Argentina',
+    'punto de venta kiosco',
+    'gestion de kiosco',
+    'sistema para comercios'
+  ],
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/logo360.ico',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/logo360.ico',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/logo360.ico',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/logo360.ico',
   },
 }
 

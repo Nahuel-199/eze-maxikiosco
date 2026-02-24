@@ -27,6 +27,7 @@ import {
   Wallet,
   CheckCircle2,
   AlertCircle,
+  Split,
 } from "lucide-react"
 import { getCashRegisterDetail } from "@/lib/actions/cash-register"
 import type { CashMovementType } from "@/lib/types"
@@ -97,12 +98,14 @@ const PAYMENT_ICONS: Record<string, React.ReactNode> = {
   cash: <Banknote className="h-4 w-4 text-green-600" />,
   card: <CreditCard className="h-4 w-4 text-blue-600" />,
   transfer: <ArrowDownCircle className="h-4 w-4 text-purple-600" />,
+  mixed: <Split className="h-4 w-4 text-orange-600" />,
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: "Efectivo",
   card: "Tarjeta",
   transfer: "Transferencia",
+  mixed: "Pago Mixto",
 }
 
 export function CashRegisterDetailDialog({
@@ -140,10 +143,10 @@ export function CashRegisterDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-2xl p-4 sm:p-6 max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[95vw] max-w-md lg:max-w-4xl p-4 sm:p-6 max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Detalle de Caja</DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
+          <DialogTitle className="text-xl">Detalle de Caja</DialogTitle>
+          <DialogDescription>
             Información completa del turno de caja
           </DialogDescription>
         </DialogHeader>
@@ -171,7 +174,7 @@ export function CashRegisterDetailDialog({
 
             <div className="flex-1 overflow-hidden mt-4">
               <TabsContent value="summary" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[450px] lg:h-[500px]">
                   <div className="space-y-4 pr-4">
                     {/* Operator Info */}
                     <Card>
@@ -179,7 +182,7 @@ export function CashRegisterDetailDialog({
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-muted-foreground">Operador</p>
-                            <p className="font-semibold">{summary?.cashRegister.operator_name}</p>
+                            <p className="font-semibold text-lg">{summary?.cashRegister.operator_name}</p>
                           </div>
                           <Badge
                             variant={
@@ -194,9 +197,7 @@ export function CashRegisterDetailDialog({
                           <div>
                             <p className="text-muted-foreground">Apertura</p>
                             <p className="font-medium">
-                              {new Date(summary?.cashRegister.opened_at || "").toLocaleString(
-                                "es-AR"
-                              )}
+                              {new Date(summary?.cashRegister.opened_at || "").toLocaleString("es-AR")}
                             </p>
                           </div>
                           {summary?.cashRegister.closed_at && (
@@ -211,134 +212,176 @@ export function CashRegisterDetailDialog({
                       </CardContent>
                     </Card>
 
-                    {/* Totals */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <Card>
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="text-xs text-muted-foreground">Ventas Total</span>
-                          </div>
-                          <p className="text-xl font-bold">${summary?.totalSales.toFixed(2)}</p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <TrendingDown className="h-4 w-4 text-red-600" />
-                            <span className="text-xs text-muted-foreground">Egresos</span>
-                          </div>
-                          <p className="text-xl font-bold text-red-600">
-                            -${summary?.totalMovements.toFixed(2)}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Sales by Payment Method */}
-                    <Card>
-                      <CardContent className="p-4">
-                        <p className="text-sm font-medium mb-3">Ventas por Método de Pago</p>
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2 text-sm">
-                              <Banknote className="h-4 w-4 text-green-600" />
-                              Efectivo
-                            </span>
-                            <span className="font-medium">${summary?.salesCash.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2 text-sm">
-                              <CreditCard className="h-4 w-4 text-blue-600" />
-                              Tarjeta
-                            </span>
-                            <span className="font-medium">${summary?.salesCard.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2 text-sm">
-                              <ArrowDownCircle className="h-4 w-4 text-purple-600" />
-                              Transferencia
-                            </span>
-                            <span className="font-medium">
-                              ${summary?.salesTransfer.toFixed(2)}
-                            </span>
-                          </div>
+                    {/* Two-column layout on desktop */}
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {/* Left: Totals + Payment breakdown */}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                                <span className="text-xs text-muted-foreground">Ventas Total</span>
+                              </div>
+                              <p className="text-2xl font-bold">${summary?.totalSales.toFixed(2)}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{summary?.salesCount} transacciones</p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <TrendingDown className="h-4 w-4 text-red-600" />
+                                <span className="text-xs text-muted-foreground">Egresos</span>
+                              </div>
+                              <p className="text-2xl font-bold text-red-600">
+                                -${summary?.totalMovements.toFixed(2)}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">{summary?.movementsCount} movimientos</p>
+                            </CardContent>
+                          </Card>
                         </div>
-                      </CardContent>
-                    </Card>
 
-                    {/* Cash Balance */}
-                    {summary?.cashRegister.status === "closed" && (
-                      <Card
-                        className={
-                          difference === 0
-                            ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
-                            : difference && difference > 0
-                              ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900"
-                              : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900"
-                        }
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            {difference === 0 ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-600" />
-                            ) : (
-                              <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                            )}
-                            <span className="font-medium">
-                              {difference === 0
-                                ? "Caja Balanceada"
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm font-medium mb-3">Ventas por Método de Pago</p>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <span className="flex items-center gap-2 text-sm">
+                                  <Banknote className="h-4 w-4 text-green-600" />
+                                  Efectivo
+                                </span>
+                                <span className="font-semibold">${summary?.salesCash.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="flex items-center gap-2 text-sm">
+                                  <CreditCard className="h-4 w-4 text-blue-600" />
+                                  Tarjeta
+                                </span>
+                                <span className="font-semibold">${summary?.salesCard.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="flex items-center gap-2 text-sm">
+                                  <ArrowDownCircle className="h-4 w-4 text-purple-600" />
+                                  Transferencia
+                                </span>
+                                <span className="font-semibold">${summary?.salesTransfer.toFixed(2)}</span>
+                              </div>
+                              <Separator />
+                              <div className="flex justify-between items-center font-bold">
+                                <span className="text-sm">Total</span>
+                                <span>${summary?.totalSales.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Right: Cash balance */}
+                      <div className="space-y-4">
+                        {/* Cash Balance - closed */}
+                        {summary?.cashRegister.status === "closed" && (
+                          <Card
+                            className={
+                              difference === 0
+                                ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
                                 : difference && difference > 0
-                                  ? "Sobrante"
-                                  : "Faltante"}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-3 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Esperado</p>
-                              <p className="font-medium">
-                                ${summary?.cashRegister.expected_amount?.toFixed(2)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Real</p>
-                              <p className="font-medium">
-                                ${summary?.cashRegister.closing_amount?.toFixed(2)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Diferencia</p>
-                              <p
-                                className={`font-bold ${
-                                  difference === 0
-                                    ? "text-green-600"
+                                  ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900"
+                                  : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900"
+                            }
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                {difference === 0 ? (
+                                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                                )}
+                                <span className="font-medium text-lg">
+                                  {difference === 0
+                                    ? "Caja Balanceada"
                                     : difference && difference > 0
-                                      ? "text-blue-600"
-                                      : "text-red-600"
-                                }`}
-                              >
-                                {difference && difference > 0 ? "+" : ""}$
-                                {Math.abs(difference || 0).toFixed(2)}
-                              </p>
+                                      ? "Sobrante"
+                                      : "Faltante"}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3 text-sm">
+                                <div>
+                                  <p className="text-muted-foreground">Esperado</p>
+                                  <p className="text-lg font-medium">
+                                    ${summary?.cashRegister.expected_amount?.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Real</p>
+                                  <p className="text-lg font-medium">
+                                    ${summary?.cashRegister.closing_amount?.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Diferencia</p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      difference === 0
+                                        ? "text-green-600"
+                                        : difference && difference > 0
+                                          ? "text-blue-600"
+                                          : "text-red-600"
+                                    }`}
+                                  >
+                                    {difference && difference > 0 ? "+" : ""}$
+                                    {Math.abs(difference || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                              {summary?.cashRegister.notes && (
+                                <>
+                                  <Separator className="my-3" />
+                                  <p className="text-sm text-muted-foreground">
+                                    Notas: {summary.cashRegister.notes}
+                                  </p>
+                                </>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
+
+                        {/* Cash flow breakdown */}
+                        <Card className="bg-muted/30">
+                          <CardContent className="p-4 space-y-3">
+                            <p className="text-sm font-medium text-muted-foreground">Flujo de Caja</p>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Apertura</span>
+                              <span className="font-medium">${summary?.cashRegister.opening_amount.toFixed(2)}</span>
                             </div>
-                          </div>
-                          {summary?.cashRegister.notes && (
-                            <>
-                              <Separator className="my-3" />
-                              <p className="text-sm text-muted-foreground">
-                                Notas: {summary.cashRegister.notes}
-                              </p>
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
+                            <div className="flex justify-between items-center text-green-600">
+                              <span className="text-sm flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                Ventas Efectivo
+                              </span>
+                              <span className="font-medium">+${summary?.salesCash.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-red-600">
+                              <span className="text-sm flex items-center gap-1">
+                                <TrendingDown className="h-3 w-3" />
+                                Egresos
+                              </span>
+                              <span className="font-medium">-${summary?.totalMovements.toFixed(2)}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-bold">Esperado en Caja</span>
+                              <span className="text-lg font-bold text-primary">${summary?.expectedAmount.toFixed(2)}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
                   </div>
                 </ScrollArea>
               </TabsContent>
 
               <TabsContent value="sales" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[450px] lg:h-[500px]">
                   {data.sales.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       No hay ventas en este turno
@@ -382,7 +425,7 @@ export function CashRegisterDetailDialog({
               </TabsContent>
 
               <TabsContent value="movements" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[450px] lg:h-[500px]">
                   {data.movements.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       No hay movimientos en este turno
@@ -429,7 +472,7 @@ export function CashRegisterDetailDialog({
               </TabsContent>
 
               <TabsContent value="products" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[450px] lg:h-[500px]">
                   {data.products.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       No hay productos vendidos en este turno

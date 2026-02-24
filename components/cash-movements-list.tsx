@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   AlertDialog,
@@ -22,16 +23,26 @@ import {
   Trash2,
   Loader2,
   ArrowDownCircle,
+  ShoppingCart,
+  Banknote,
+  CreditCard,
+  ArrowRightLeft,
+  Split,
 } from "lucide-react"
 import { deleteCashMovement } from "@/lib/actions/cash-movements"
 import { useToast } from "@/hooks/use-toast"
-import type { CashMovement, CashMovementType } from "@/lib/types"
+import type { CashMovement, CashMovementType, Sale } from "@/lib/types"
 
 interface CashMovementsListProps {
   movements: CashMovement[]
+  sales: Sale[]
   isAdmin: boolean
   onMovementDeleted: () => void
 }
+
+type TimelineEntry =
+  | { kind: "movement"; data: CashMovement; date: Date }
+  | { kind: "sale"; data: Sale; date: Date }
 
 const MOVEMENT_ICONS: Record<CashMovementType, React.ReactNode> = {
   supplier_payment: <Truck className="h-4 w-4 text-orange-500" />,
@@ -47,14 +58,45 @@ const MOVEMENT_LABELS: Record<CashMovementType, string> = {
   withdrawal: "Retiro",
 }
 
+const PAYMENT_ICONS: Record<string, React.ReactNode> = {
+  cash: <Banknote className="h-4 w-4 text-green-500" />,
+  card: <CreditCard className="h-4 w-4 text-blue-500" />,
+  transfer: <ArrowRightLeft className="h-4 w-4 text-violet-500" />,
+  mixed: <Split className="h-4 w-4 text-orange-500" />,
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: "Efectivo",
+  card: "Tarjeta",
+  transfer: "Transferencia",
+  mixed: "Pago Mixto",
+}
+
 export function CashMovementsList({
   movements,
+  sales,
   isAdmin,
-  onMovementDeleted
+  onMovementDeleted,
 }: CashMovementsListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const { toast } = useToast()
+
+  const timeline = useMemo<TimelineEntry[]>(() => {
+    const entries: TimelineEntry[] = [
+      ...movements.map((m) => ({
+        kind: "movement" as const,
+        data: m,
+        date: new Date(m.created_at),
+      })),
+      ...sales.map((s) => ({
+        kind: "sale" as const,
+        data: s,
+        date: new Date(s.created_at),
+      })),
+    ]
+    return entries.sort((a, b) => b.date.getTime() - a.date.getTime())
+  }, [movements, sales])
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -89,8 +131,9 @@ export function CashMovementsList({
   }
 
   const totalMovements = movements.reduce((sum, m) => sum + m.amount, 0)
+  const totalSales = sales.reduce((sum, s) => sum + s.total, 0)
 
-  if (movements.length === 0) {
+  if (timeline.length === 0) {
     return (
       <Card>
         <CardHeader className="pb-3">
@@ -117,67 +160,133 @@ export function CashMovementsList({
               <ArrowDownCircle className="h-4 w-4" />
               Movimientos del Turno
             </CardTitle>
-            <span className="text-sm font-bold text-red-600">
-              -${totalMovements.toFixed(2)}
-            </span>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="font-bold text-green-600">
+                +${totalSales.toFixed(2)}
+              </span>
+              {totalMovements > 0 && (
+                <span className="font-bold text-red-600">
+                  -${totalMovements.toFixed(2)}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="secondary" className="text-xs font-normal">
+              {sales.length} {sales.length === 1 ? "venta" : "ventas"}
+            </Badge>
+            {movements.length > 0 && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {movements.length} {movements.length === 1 ? "egreso" : "egresos"}
+              </Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[300px]">
+          <ScrollArea className="max-h-[400px]">
             <div className="divide-y">
-              {movements.map((movement) => (
-                <div
-                  key={movement.id}
-                  className="flex items-start gap-3 p-3 hover:bg-muted/50"
-                >
-                  <div className="mt-0.5">
-                    {MOVEMENT_ICONS[movement.type]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {MOVEMENT_LABELS[movement.type]}
+              {timeline.map((entry) => {
+                if (entry.kind === "sale") {
+                  const sale = entry.data
+                  const itemCount = sale.items?.length || 0
+                  const itemsSummary = sale.items
+                    ?.slice(0, 3)
+                    .map((i) => `${i.quantity}x ${i.product_name}`)
+                    .join(", ")
+                  const hasMore = itemCount > 3
+
+                  return (
+                    <div
+                      key={`sale-${sale.id}`}
+                      className="flex items-start gap-3 p-3 hover:bg-muted/50"
+                    >
+                      <div className="mt-0.5 p-1 bg-green-100 dark:bg-green-900/30 rounded">
+                        <ShoppingCart className="h-3.5 w-3.5 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                            Venta
+                          </span>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            {PAYMENT_ICONS[sale.payment_method]}
+                            {PAYMENT_LABELS[sale.payment_method]}
+                          </span>
+                        </div>
+                        <p className="text-sm truncate text-muted-foreground">
+                          {itemsSummary}
+                          {hasMore && ` (+${itemCount - 3} más)`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.date.toLocaleTimeString("es-AR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {itemCount > 0 && ` - ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-green-600">
+                        +${sale.total.toFixed(2)}
                       </span>
-                      {movement.supplier_name && (
-                        <span className="text-xs text-muted-foreground">
-                          - {movement.supplier_name}
+                    </div>
+                  )
+                }
+
+                const movement = entry.data
+                return (
+                  <div
+                    key={`mov-${movement.id}`}
+                    className="flex items-start gap-3 p-3 hover:bg-muted/50"
+                  >
+                    <div className="mt-0.5 p-1 bg-red-100 dark:bg-red-900/30 rounded">
+                      {MOVEMENT_ICONS[movement.type]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                          {MOVEMENT_LABELS[movement.type]}
                         </span>
+                        {movement.supplier_name && (
+                          <span className="text-xs text-muted-foreground">
+                            - {movement.supplier_name}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium truncate">
+                        {movement.description}
+                      </p>
+                      {movement.reference_number && (
+                        <p className="text-xs text-muted-foreground">
+                          Ref: {movement.reference_number}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {entry.date.toLocaleTimeString("es-AR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" - "}
+                        {movement.created_by_name}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-red-600">
+                        -${movement.amount.toFixed(2)}
+                      </span>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                          onClick={() => setDeleteId(movement.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
-                    <p className="text-sm font-medium truncate">
-                      {movement.description}
-                    </p>
-                    {movement.reference_number && (
-                      <p className="text-xs text-muted-foreground">
-                        Ref: {movement.reference_number}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(movement.created_at).toLocaleTimeString("es-AR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {" - "}
-                      {movement.created_by_name}
-                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-red-600">
-                      -${movement.amount.toFixed(2)}
-                    </span>
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-red-600"
-                        onClick={() => setDeleteId(movement.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </ScrollArea>
         </CardContent>

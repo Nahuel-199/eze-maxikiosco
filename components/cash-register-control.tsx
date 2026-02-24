@@ -21,7 +21,8 @@ import { CashMovementsList } from "@/components/cash-movements-list"
 import { CashRegisterHistory } from "@/components/cash-register-history"
 import { getActiveCashRegister, getCashRegisterSummary } from "@/lib/actions/cash-register"
 import { getActiveRegisterMovements } from "@/lib/actions/cash-movements"
-import type { CashRegister, CashMovement, CashRegisterSummary } from "@/lib/types"
+import { getActiveRegisterSales } from "@/lib/actions/sales"
+import type { CashRegister, CashMovement, CashRegisterSummary, Sale } from "@/lib/types"
 import { hasPermission, PERMISSIONS } from "@/lib/permissions"
 
 interface CashRegisterControlProps {
@@ -37,6 +38,7 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
   const [activeRegister, setActiveRegister] = useState<CashRegister | null>(null)
   const [summary, setSummary] = useState<CashRegisterSummary | null>(null)
   const [movements, setMovements] = useState<CashMovement[]>([])
+  const [sales, setSales] = useState<Sale[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showOpenDialog, setShowOpenDialog] = useState(false)
   const [showCloseDialog, setShowCloseDialog] = useState(false)
@@ -49,15 +51,18 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
       setActiveRegister(register)
 
       if (register) {
-        const [summaryData, movementsData] = await Promise.all([
+        const [summaryData, movementsData, salesData] = await Promise.all([
           getCashRegisterSummary(register.id),
           getActiveRegisterMovements(),
+          getActiveRegisterSales(),
         ])
         setSummary(summaryData)
         setMovements(movementsData)
+        setSales(salesData)
       } else {
         setSummary(null)
         setMovements([])
+        setSales([])
       }
     } catch (error) {
       console.error("Error loading cash register data:", error)
@@ -78,7 +83,7 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 sm:p-6 max-w-5xl">
+      <div className="container mx-auto p-4 sm:p-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -87,7 +92,7 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-5xl">
+    <div className="container mx-auto p-4 sm:p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Control de Caja</h1>
@@ -269,6 +274,7 @@ export function CashRegisterControl({ user }: CashRegisterControlProps) {
         {activeRegister && (
           <CashMovementsList
             movements={movements}
+            sales={sales}
             isAdmin={canDeleteMovements}
             onMovementDeleted={handleSuccess}
           />
