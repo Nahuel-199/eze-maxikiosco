@@ -13,6 +13,7 @@ export interface UserFormData {
   role: "admin" | "employee"
   permissions?: string[]
   active: boolean
+  must_change_password?: boolean
 }
 
 export interface GetUsersOptions {
@@ -47,7 +48,7 @@ export async function getUsers(options: GetUsersOptions = {}): Promise<GetUsersR
       search = "",
     } = options
 
-    const filter: any = {}
+    const filter: any = { active: true }
 
     if (search.trim()) {
       const searchRegex = new RegExp(search.trim(), "i")
@@ -75,6 +76,7 @@ export async function getUsers(options: GetUsersOptions = {}): Promise<GetUsersR
       role: user.role,
       permissions: user.permissions ?? [],
       active: user.active,
+      must_change_password: user.must_change_password ?? false,
       last_login: user.last_login?.toISOString() || null,
       created_at: user.createdAt?.toISOString() || new Date().toISOString(),
       updated_at: user.updatedAt?.toISOString() || new Date().toISOString(),
@@ -117,6 +119,7 @@ export async function getUserById(id: string) {
       role: user.role,
       permissions: user.permissions ?? [],
       active: user.active,
+      must_change_password: user.must_change_password ?? false,
       last_login: user.last_login?.toISOString() || null,
       created_at: user.createdAt?.toISOString() || new Date().toISOString(),
       updated_at: user.updatedAt?.toISOString() || new Date().toISOString(),
@@ -137,13 +140,6 @@ export async function createUser(data: UserFormData) {
 
     await connectDB()
 
-    if (!data.password) {
-      return {
-        success: false,
-        error: "La contraseña es requerida",
-      }
-    }
-
     // Verificar email único
     const existingUser = await User.findOne({ email: data.email.toLowerCase() })
     if (existingUser) {
@@ -153,15 +149,13 @@ export async function createUser(data: UserFormData) {
       }
     }
 
-    const password_hash = await bcrypt.hash(data.password, 10)
-
     const user = await User.create({
       full_name: data.full_name,
       email: data.email,
-      password_hash,
       role: data.role,
       permissions: data.role === "admin" ? [] : (data.permissions ?? []),
       active: data.active,
+      must_change_password: true,
     })
 
     revalidatePath("/dashboard/usuarios")
@@ -235,6 +229,12 @@ export async function updateUser(id: string, data: UserFormData) {
     // Solo actualizar password si se proporcionó
     if (data.password) {
       user.password_hash = await bcrypt.hash(data.password, 10)
+      user.must_change_password = false
+    }
+
+    // Permitir forzar cambio de contraseña
+    if (data.must_change_password !== undefined) {
+      user.must_change_password = data.must_change_password
     }
 
     await user.save()
@@ -287,8 +287,7 @@ export async function deleteUser(id: string) {
       }
     }
 
-    user.active = false
-    await user.save()
+    await User.findByIdAndDelete(id)
 
     revalidatePath("/dashboard/usuarios")
 

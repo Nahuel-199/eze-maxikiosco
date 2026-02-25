@@ -2,11 +2,12 @@ import mongoose, { Schema, Document, Model } from "mongoose"
 
 export interface IUser extends Document {
   email: string
-  password_hash: string
+  password_hash?: string
   full_name: string
   role: "admin" | "employee"
   permissions: string[]
   active: boolean
+  must_change_password: boolean
   last_login?: Date
   createdAt: Date
   updatedAt: Date
@@ -24,7 +25,11 @@ const UserSchema = new Schema<IUser>(
     },
     password_hash: {
       type: String,
-      required: [true, "La contraseña es requerida"],
+      default: undefined,
+    },
+    must_change_password: {
+      type: Boolean,
+      default: true,
     },
     full_name: {
       type: String,

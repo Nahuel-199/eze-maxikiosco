@@ -5,6 +5,7 @@ import { Category } from "@/lib/models"
 import { revalidatePath } from "next/cache"
 import { requireSession, requirePermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
+import { createAuditLog } from "./audit-log"
 
 export interface CategoryFormData {
   name: string
@@ -95,6 +96,16 @@ export async function createCategory(data: CategoryFormData) {
       active: data.active,
     })
 
+    await createAuditLog({
+      user_id: auth.session.id,
+      user_name: auth.session.full_name,
+      user_email: auth.session.email,
+      action: "create",
+      entity_type: "category",
+      entity_name: category.name,
+      entity_id: category._id.toString(),
+    })
+
     revalidatePath("/dashboard/products")
 
     return {
@@ -154,6 +165,14 @@ export async function updateCategory(id: string, data: CategoryFormData) {
       }
     }
 
+    // Capturar valores anteriores para auditoría
+    const oldValues = {
+      name: category.name,
+      description: category.description,
+      icon: category.icon,
+      active: category.active,
+    }
+
     // Actualizar categoría
     category.name = data.name
     category.description = data.description || undefined
@@ -161,6 +180,46 @@ export async function updateCategory(id: string, data: CategoryFormData) {
     category.active = data.active
 
     await category.save()
+
+    // Registrar auditoría
+    const fieldLabels: Record<string, string> = {
+      name: "Nombre",
+      description: "Descripción",
+      icon: "Ícono",
+      active: "Activo",
+    }
+
+    const newValues: Record<string, any> = {
+      name: data.name,
+      description: data.description || undefined,
+      icon: data.icon || undefined,
+      active: data.active,
+    }
+
+    const changes = Object.keys(fieldLabels)
+      .filter((key) => {
+        const oldVal = oldValues[key as keyof typeof oldValues]
+        const newVal = newValues[key]
+        return String(oldVal ?? "") !== String(newVal ?? "")
+      })
+      .map((key) => ({
+        field: fieldLabels[key],
+        from: oldValues[key as keyof typeof oldValues] ?? null,
+        to: newValues[key] ?? null,
+      }))
+
+    if (changes.length > 0) {
+      await createAuditLog({
+        user_id: auth.session.id,
+        user_name: auth.session.full_name,
+        user_email: auth.session.email,
+        action: "update",
+        entity_type: "category",
+        entity_name: data.name,
+        entity_id: category._id.toString(),
+        changes,
+      })
+    }
 
     revalidatePath("/dashboard/products")
 
@@ -225,8 +284,15 @@ export async function deleteCategory(id: string) {
     category.active = false
     await category.save()
 
-    // Si prefieres eliminación física cuando no hay productos:
-    // await category.deleteOne()
+    await createAuditLog({
+      user_id: auth.session.id,
+      user_name: auth.session.full_name,
+      user_email: auth.session.email,
+      action: "delete",
+      entity_type: "category",
+      entity_name: category.name,
+      entity_id: category._id.toString(),
+    })
 
     revalidatePath("/dashboard/products")
 

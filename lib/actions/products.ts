@@ -7,6 +7,7 @@ import { deleteImage } from "./cloudinary"
 import { revalidatePath } from "next/cache"
 import { requireSession, requirePermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
+import { createAuditLog } from "./audit-log"
 
 export interface ProductFormData {
   name: string
@@ -277,6 +278,16 @@ export async function createProduct(data: ProductFormData) {
       active: data.active,
     })
 
+    await createAuditLog({
+      user_id: auth.session.id,
+      user_name: auth.session.full_name,
+      user_email: auth.session.email,
+      action: "create",
+      entity_type: "product",
+      entity_name: product.name,
+      entity_id: product._id.toString(),
+    })
+
     revalidatePath("/dashboard/products")
 
     return {
@@ -366,6 +377,21 @@ export async function updateProduct(id: string, data: ProductFormData) {
       await deleteImage(product.image_url)
     }
 
+    // Capturar valores anteriores para auditoría
+    const oldValues = {
+      name: product.name,
+      description: product.description,
+      sku: product.sku,
+      barcode: product.barcode,
+      category_id: product.category_id?.toString(),
+      price: product.price,
+      cost: product.cost,
+      stock: product.stock,
+      min_stock: product.min_stock,
+      image_url: product.image_url,
+      active: product.active,
+    }
+
     // Actualizar producto
     product.name = data.name
     product.description = data.description || undefined
@@ -380,6 +406,61 @@ export async function updateProduct(id: string, data: ProductFormData) {
     product.active = data.active
 
     await product.save()
+
+    // Registrar auditoría
+    const fieldLabels: Record<string, string> = {
+      name: "Nombre",
+      description: "Descripción",
+      sku: "SKU",
+      barcode: "Código de barras",
+      category_id: "Categoría",
+      price: "Precio",
+      cost: "Costo",
+      stock: "Stock",
+      min_stock: "Stock mínimo",
+      image_url: "Imagen",
+      active: "Activo",
+    }
+
+    const newValues: Record<string, any> = {
+      name: data.name,
+      description: data.description || undefined,
+      sku: data.sku || undefined,
+      barcode: data.barcode || undefined,
+      category_id: data.category_id || undefined,
+      price: data.price,
+      cost: data.cost || undefined,
+      stock: data.stock,
+      min_stock: data.min_stock,
+      image_url: data.image_url || undefined,
+      active: data.active,
+    }
+
+    const changes = Object.keys(fieldLabels)
+      .filter((key) => {
+        const oldVal = oldValues[key as keyof typeof oldValues]
+        const newVal = newValues[key]
+        return String(oldVal ?? "") !== String(newVal ?? "")
+      })
+      .map((key) => ({
+        field: fieldLabels[key],
+        from: oldValues[key as keyof typeof oldValues] ?? null,
+        to: newValues[key] ?? null,
+      }))
+
+    if (changes.length > 0) {
+      const stockChanged = oldValues.stock !== data.stock
+      await createAuditLog({
+        user_id: auth.session.id,
+        user_name: auth.session.full_name,
+        user_email: auth.session.email,
+        action: stockChanged ? "stock_update" : "update",
+        entity_type: "product",
+        entity_name: data.name,
+        entity_id: product._id.toString(),
+        changes,
+      })
+    }
 
     revalidatePath("/dashboard/products")
 
@@ -426,17 +507,26 @@ export async function deleteProduct(id: string) {
       }
     }
 
+    const productId = product._id.toString()
+    const productName = product.name
+
     // Eliminar imagen de Cloudinary si existe
     if (product.image_url) {
       await deleteImage(product.image_url)
     }
 
-    // Soft delete (marcar como inactivo)
-    product.active = false
-    await product.save()
+    // Eliminación permanente de la base de datos
+    await product.deleteOne()
 
-    // Si prefieres eliminación física, usa:
-    // await product.deleteOne()
+    await createAuditLog({
+      user_id: auth.session.id,
+      user_name: auth.session.full_name,
+      user_email: auth.session.email,
+      action: "delete",
+      entity_type: "product",
+      entity_name: productName,
+      entity_id: productId,
+    })
 
     revalidatePath("/dashboard/products")
 

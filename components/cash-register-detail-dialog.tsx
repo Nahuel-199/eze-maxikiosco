@@ -143,7 +143,7 @@ export function CashRegisterDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md lg:max-w-4xl p-4 sm:p-6 max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-5xl h-[95vh] sm:h-[90vh] p-4 sm:p-6 overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">Detalle de Caja</DialogTitle>
           <DialogDescription>
@@ -160,8 +160,8 @@ export function CashRegisterDetailDialog({
             No se pudo cargar el detalle
           </div>
         ) : (
-          <Tabs defaultValue="summary" className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="summary" className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="grid w-full grid-cols-4 shrink-0">
               <TabsTrigger value="summary" className="text-xs sm:text-sm">Resumen</TabsTrigger>
               <TabsTrigger value="sales" className="text-xs sm:text-sm">
                 Ventas ({summary?.salesCount})
@@ -172,9 +172,9 @@ export function CashRegisterDetailDialog({
               <TabsTrigger value="products" className="text-xs sm:text-sm">Productos</TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-hidden mt-4">
+            <div className="flex-1 min-h-0 mt-4">
               <TabsContent value="summary" className="h-full m-0">
-                <ScrollArea className="h-[450px] lg:h-[500px]">
+                <ScrollArea className="h-full">
                   <div className="space-y-4 pr-4">
                     {/* Operator Info */}
                     <Card>
@@ -381,7 +381,7 @@ export function CashRegisterDetailDialog({
               </TabsContent>
 
               <TabsContent value="sales" className="h-full m-0">
-                <ScrollArea className="h-[450px] lg:h-[500px]">
+                <ScrollArea className="h-full">
                   {data.sales.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       No hay ventas en este turno
@@ -425,7 +425,7 @@ export function CashRegisterDetailDialog({
               </TabsContent>
 
               <TabsContent value="movements" className="h-full m-0">
-                <ScrollArea className="h-[450px] lg:h-[500px]">
+                <ScrollArea className="h-full">
                   {data.movements.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       No hay movimientos en este turno
@@ -472,7 +472,7 @@ export function CashRegisterDetailDialog({
               </TabsContent>
 
               <TabsContent value="products" className="h-full m-0">
-                <ScrollArea className="h-[450px] lg:h-[500px]">
+                <ScrollArea className="h-full">
                   {data.products.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       No hay productos vendidos en este turno

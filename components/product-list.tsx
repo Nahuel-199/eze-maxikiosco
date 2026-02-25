@@ -462,8 +462,9 @@ export function ProductList({ searchTerm, onEdit, onRefresh, refreshKey, lowStoc
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar producto</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro que deseas eliminar el producto "{productToDelete?.name}"?
-              Esta acción marcará el producto como inactivo.
+              ¿Estás seguro que deseas eliminar el producto &quot;{productToDelete?.name}&quot;?
+              Esta acción es permanente y no se puede deshacer. Se eliminará el producto
+              de la base de datos y su imagen asociada.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -48,6 +48,7 @@ export function UserDialog({
     role: "employee" as "admin" | "employee",
     permissions: [] as string[],
     active: true,
+    must_change_password: true,
   })
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export function UserDialog({
               role: user.role,
               permissions: user.permissions ?? [],
               active: user.active,
+              must_change_password: user.must_change_password ?? false,
             })
           }
         })
@@ -79,6 +81,7 @@ export function UserDialog({
         role: "employee",
         permissions: [],
         active: true,
+        must_change_password: true,
       })
       setErrors({})
     }
@@ -97,9 +100,7 @@ export function UserDialog({
       newErrors.email = "Ingrese un email válido"
     }
 
-    if (!isEditing && !formData.password) {
-      newErrors.password = "La contraseña es requerida"
-    } else if (formData.password && formData.password.length < 6) {
+    if (formData.password && formData.password.length < 6) {
       newErrors.password = "La contraseña debe tener al menos 6 caracteres"
     }
 
@@ -145,6 +146,7 @@ export function UserDialog({
         role: formData.role,
         permissions: formData.role === "employee" ? formData.permissions : [],
         active: formData.active,
+        must_change_password: isEditing ? formData.must_change_password : undefined,
       }
 
       let result
@@ -236,25 +238,45 @@ export function UserDialog({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  Contraseña {isEditing ? "(dejar vacío para no cambiar)" : "*"}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => {
-                    setFormData({ ...formData, password: e.target.value })
-                    if (errors.password) setErrors({ ...errors, password: undefined })
-                  }}
-                  className={errors.password ? "border-destructive" : ""}
-                  placeholder={isEditing ? "••••••••" : "Mínimo 6 caracteres"}
-                />
-                {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password}</p>
-                )}
-              </div>
+              {isEditing && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">
+                      Contraseña (dejar vacío para no cambiar)
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => {
+                        setFormData({ ...formData, password: e.target.value })
+                        if (errors.password) setErrors({ ...errors, password: undefined })
+                      }}
+                      className={errors.password ? "border-destructive" : ""}
+                      placeholder="••••••••"
+                    />
+                    {errors.password && (
+                      <p className="text-xs text-destructive">{errors.password}</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="must_change_password"
+                      checked={formData.must_change_password}
+                      onCheckedChange={(v) => setFormData({ ...formData, must_change_password: v })}
+                    />
+                    <Label htmlFor="must_change_password">Forzar cambio de contraseña en próximo inicio</Label>
+                  </div>
+                </>
+              )}
+              {!isEditing && (
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <p className="text-sm text-muted-foreground">
+                    El usuario creará su propia contraseña en su primer inicio de sesión.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Rol</Label>

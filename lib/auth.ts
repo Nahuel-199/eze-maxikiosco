@@ -5,12 +5,78 @@ import bcrypt from "bcryptjs"
 import { connectDB } from "@/lib/db"
 import User from "@/lib/models/User"
 
+export async function checkEmail(email: string) {
+  await connectDB()
+
+  const user = await User.findOne({ email: email.toLowerCase(), active: true })
+
+  if (!user) {
+    return { exists: false, mustChangePassword: false }
+  }
+
+  return {
+    exists: true,
+    mustChangePassword: user.must_change_password,
+    fullName: user.full_name,
+  }
+}
+
+export async function setupPassword(email: string, password: string) {
+  await connectDB()
+
+  const user = await User.findOne({ email: email.toLowerCase(), active: true })
+
+  if (!user) {
+    return { success: false, error: "Usuario no encontrado" }
+  }
+
+  if (!user.must_change_password) {
+    return { success: false, error: "Este usuario ya configuró su contraseña" }
+  }
+
+  if (password.length < 6) {
+    return { success: false, error: "La contraseña debe tener al menos 6 caracteres" }
+  }
+
+  user.password_hash = await bcrypt.hash(password, 10)
+  user.must_change_password = false
+  user.last_login = new Date()
+  await user.save()
+
+  // Login automático
+  const session = {
+    id: user._id.toString(),
+    email: user.email,
+    full_name: user.full_name,
+    role: user.role,
+    permissions: user.permissions ?? [],
+  }
+
+  const cookieStore = await cookies()
+  cookieStore.set("session", JSON.stringify(session), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  })
+
+  return { success: true, user: session }
+}
+
 export async function login(email: string, password: string) {
   await connectDB()
 
   const user = await User.findOne({ email: email.toLowerCase(), active: true })
 
   if (!user) {
+    return { success: false, error: "Credenciales inválidas" }
+  }
+
+  if (user.must_change_password) {
+    return { success: false, error: "Debés crear tu contraseña antes de iniciar sesión" }
+  }
+
+  if (!user.password_hash) {
     return { success: false, error: "Credenciales inválidas" }
   }
 

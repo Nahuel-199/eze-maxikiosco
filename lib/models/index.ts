@@ -5,6 +5,7 @@ export { default as Product } from "./Product"
 export { default as CashRegister } from "./CashRegister"
 export { default as CashMovement } from "./CashMovement"
 export { default as Sale } from "./Sale"
+export { default as AuditLog } from "./AuditLog"
 
 // Exportar tipos
 export type { IUser } from "./User"
@@ -13,3 +14,4 @@ export type { IProduct } from "./Product"
 export type { ICashRegister } from "./CashRegister"
 export type { ICashMovement, CashMovementType } from "./CashMovement"
 export type { ISale, ISaleItem } from "./Sale"
+export type { IAuditLog, IAuditLogChange, AuditAction, AuditEntityType } from "./AuditLog"
