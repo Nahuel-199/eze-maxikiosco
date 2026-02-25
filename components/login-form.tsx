@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login, checkEmail, setupPassword } from "@/lib/auth"
 import { Eye, EyeOff, ArrowLeft, KeyRound } from "lucide-react"
-import Image from "next/image"
 
 type Step = "email" | "password" | "setup-password"
 
@@ -121,7 +120,7 @@ export function LoginForm() {
     <Card className="w-full max-w-md shadow-xl mx-4 sm:mx-0">
       <CardHeader className="space-y-2 text-center px-4 sm:px-6 pt-6 sm:pt-8">
         <div className="flex justify-center mb-2">
-          <Image
+          <img
             src="/logo360.png"
             alt="Controla360 Logo"
             width={64}

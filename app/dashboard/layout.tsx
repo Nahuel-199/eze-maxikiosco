@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DashboardNav } from "@/components/dashboard-nav"
 
+export const dynamic = "force-dynamic"
+
 export default async function DashboardLayout({
   children,
 }: {
