@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { logout } from "@/lib/auth"
 import { navItems } from "@/lib/nav-items"
 import { hasPermission, type Permission } from "@/lib/permissions"
+import { isFeatureEnabled } from "@/lib/features"
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +37,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   const filteredItems = navItems.filter((item) => {
+    if (item.feature && !isFeatureEnabled(item.feature)) return false
     if (item.adminOnly) return user.role === "admin"
     if (item.permission) return hasPermission(user, item.permission as Permission)
     return true

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { isFeatureEnabled, FEATURE_ROUTE_MAP } from "@/lib/features"
 
 // Mapeo de rutas a permisos requeridos
 const ROUTE_PERMISSIONS: Record<string, string> = {
@@ -43,6 +44,13 @@ export function proxy(request: NextRequest) {
   }
 
   const session = getSession(request)
+
+  // Feature flags: redirigir si el módulo está deshabilitado
+  for (const [route, feature] of Object.entries(FEATURE_ROUTE_MAP)) {
+    if (pathname.startsWith(route) && !isFeatureEnabled(feature)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+  }
 
   // Admin has full access
   if (session?.role === "admin") {

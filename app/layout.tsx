@@ -8,8 +8,13 @@ import './globals.css'
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
+const businessName = process.env.NEXT_PUBLIC_BUSINESS_NAME || ''
+const pageTitle = businessName
+  ? `Controla360 | ${businessName}`
+  : 'Controla360 | Sistema de gestion de comercios'
+
 export const metadata: Metadata = {
-  title: 'Controla360 | Sistema de gestion de comercios',
+  title: pageTitle,
   description:
     'Software de gestion para comercios, maxikioscos. Control de stock, punto de venta, reportes y mas. Sin instalacion, desde tu celular o computadora.',
   keywords: [

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet"
 import { navItems } from "@/lib/nav-items"
 import { hasPermission, type Permission } from "@/lib/permissions"
+import { isFeatureEnabled } from "@/lib/features"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 interface DashboardNavProps {
@@ -44,6 +45,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
   }
 
   const filteredItems = navItems.filter((item) => {
+    if (item.feature && !isFeatureEnabled(item.feature)) return false
     if (item.adminOnly) return user.role === "admin"
     if (item.permission) return hasPermission(user, item.permission as Permission)
     return true

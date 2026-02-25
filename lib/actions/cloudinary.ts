@@ -45,7 +45,7 @@ export async function uploadImage(
       (resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
-            folder: "maxikiosco-lafe/products",
+            folder: `${process.env.CLOUDINARY_FOLDER || "controla360"}/products`,
             transformation: [
               { width: 800, height: 800, crop: "limit" },
               { quality: "auto" },
@@ -93,10 +93,17 @@ export async function deleteImage(
       return { success: false, error: "No se proporcionó URL de imagen" }
     }
 
-    // Extraer el public_id de la URL
-    const urlParts = imageUrl.split("/")
-    const filename = urlParts[urlParts.length - 1]
-    const publicId = `maxi-kiosco/products/${filename.split(".")[0]}`
+    // Extraer el public_id de la URL de Cloudinary
+    // URL formato: https://res.cloudinary.com/cloud/image/upload/v123/folder/products/filename.ext
+    const uploadIndex = imageUrl.indexOf("/upload/")
+    if (uploadIndex === -1) {
+      return { success: false, error: "URL de imagen no válida" }
+    }
+    const afterUpload = imageUrl.substring(uploadIndex + 8) // después de "/upload/"
+    // Remover versión (v123456/) si existe
+    const withoutVersion = afterUpload.replace(/^v\d+\//, "")
+    // Remover extensión del archivo
+    const publicId = withoutVersion.replace(/\.[^/.]+$/, "")
 
     await cloudinary.uploader.destroy(publicId)
 

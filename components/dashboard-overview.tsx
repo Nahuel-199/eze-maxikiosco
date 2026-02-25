@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import type { DashboardData } from "@/lib/actions/dashboard"
+import { isFeatureEnabled } from "@/lib/features"
 
 interface DashboardOverviewProps {
   data: DashboardData
@@ -45,6 +46,7 @@ function formatDate(dateString: string) {
 
 export function DashboardOverview({ data }: DashboardOverviewProps) {
   const { stats, topProducts, lowStockProducts, unsoldProducts, recentClosings } = data
+  const showProducts = isFeatureEnabled("products")
 
   const inventoryCards = [
     {
@@ -93,8 +95,8 @@ export function DashboardOverview({ data }: DashboardOverviewProps) {
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-        {inventoryCards.map((card) => (
+      <div className={`grid gap-4 grid-cols-2 ${showProducts ? "lg:grid-cols-5" : "lg:grid-cols-3"}`}>
+        {showProducts && inventoryCards.map((card) => (
           <Card key={card.title}>
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-3">
@@ -142,7 +144,7 @@ export function DashboardOverview({ data }: DashboardOverviewProps) {
       </div>
 
       {/* Top Products */}
-      {topProducts.length > 0 && (
+      {showProducts && topProducts.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base sm:text-lg">
@@ -181,7 +183,7 @@ export function DashboardOverview({ data }: DashboardOverviewProps) {
       )}
 
       {/* Low Stock + Unsold Products */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {showProducts && <div className="grid gap-4 lg:grid-cols-2">
         {/* Low Stock */}
         <Card>
           <CardHeader>
@@ -260,7 +262,7 @@ export function DashboardOverview({ data }: DashboardOverviewProps) {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
       {/* Recent Cash Register Closings */}
       {recentClosings.length > 0 && (
