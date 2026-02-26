@@ -35,7 +35,12 @@ export function OpenRegisterDialog({
   const [operatorName, setOperatorName] = useState(defaultOperatorName)
   const [amount, setAmount] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [currentDate, setCurrentDate] = useState("")
   const { toast } = useToast()
+
+  useEffect(() => {
+    setCurrentDate(new Date().toLocaleString("es-AR"))
+  }, [])
 
   useEffect(() => {
     if (defaultOperatorName) {
@@ -106,7 +111,7 @@ export function OpenRegisterDialog({
             <Card className="bg-muted/50">
               <CardContent className="p-3 sm:p-4">
                 <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Fecha y Hora</p>
-                <p className="font-semibold text-sm sm:text-base">{new Date().toLocaleString("es-AR")}</p>
+                <p className="font-semibold text-sm sm:text-base">{currentDate}</p>
               </CardContent>
             </Card>
 
