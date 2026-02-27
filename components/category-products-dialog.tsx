@@ -36,7 +36,7 @@ export function CategoryProductsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[100vw] max-w-4xl max-h-[85vh] flex flex-col">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] flex flex-col p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-xl">{category.icon || "📦"}</span>
@@ -55,7 +55,7 @@ export function CategoryProductsDialog({
             </p>
           </div>
         ) : (
-          <div className="overflow-y-auto -mx-6 px-6">
+          <div className="overflow-y-auto flex-1 min-h-0 -mx-6 px-6">
             {/* Desktop: tabla */}
             <div className="hidden sm:block">
               <Table>

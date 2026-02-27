@@ -121,7 +121,7 @@ export function BarcodeScanner({ open, onOpenChange, onScan }: BarcodeScannerPro
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-md p-4 sm:p-6">
+      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] flex flex-col p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />

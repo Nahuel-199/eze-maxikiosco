@@ -129,8 +129,8 @@ export function CloseRegisterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md lg:max-w-3xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-md lg:max-w-3xl p-4 sm:p-6 max-h-[90vh] flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Lock className="h-5 w-5" />
             Cerrar Caja
@@ -145,8 +145,8 @@ export function CloseRegisterDialog({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-2">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+            <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0 pr-1">
               {summary && (
                 <>
                   {/* Operator info */}
@@ -343,7 +343,7 @@ export function CloseRegisterDialog({
               )}
             </div>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2 pt-4">
+            <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"

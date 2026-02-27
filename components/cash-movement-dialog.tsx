@@ -126,8 +126,8 @@ export function CashMovementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <ArrowDownCircle className="h-5 w-5 text-red-500" />
             Registrar Egreso
@@ -137,8 +137,8 @@ export function CashMovementDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="space-y-2">
               <Label htmlFor="movement-type" className="text-sm sm:text-base">
                 Tipo de Movimiento *
@@ -233,7 +233,7 @@ export function CashMovementDialog({
             </div>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 pt-4 border-t">
             <Button
               type="button"
               variant="outline"

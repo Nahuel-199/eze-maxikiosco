@@ -45,8 +45,8 @@ async function DashboardContent({ canViewProducts }: { canViewProducts: boolean 
 
   return (
     <>
-      {canViewProducts && data.lowStockProducts.length > 0 && (
-        <LowStockBanner count={data.lowStockProducts.length} />
+      {canViewProducts && data.lowStockCount > 0 && (
+        <LowStockBanner count={data.lowStockCount} />
       )}
       <DashboardOverview data={data} />
     </>

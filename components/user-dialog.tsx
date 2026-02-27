@@ -184,8 +184,8 @@ export function UserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="shrink-0">
           <DialogTitle>
             {isEditing ? "Editar Usuario" : "Nuevo Usuario"}
           </DialogTitle>
@@ -201,8 +201,8 @@ export function UserDialog({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+            <div className="grid gap-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
               <div className="space-y-2">
                 <Label htmlFor="full_name">Nombre completo *</Label>
                 <Input
@@ -364,7 +364,7 @@ export function UserDialog({
               )}
             </div>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2">
+            <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"

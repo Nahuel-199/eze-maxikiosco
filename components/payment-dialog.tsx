@@ -190,7 +190,7 @@ export function PaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-md lg:max-w-2xl p-4 sm:p-6">
+      <DialogContent className="w-[95vw] max-w-md lg:max-w-2xl max-h-[90vh] flex flex-col p-4 sm:p-6">
         {success ? (
           <div className="py-8 sm:py-12 text-center">
             <CheckCircle2 className="h-12 w-12 sm:h-16 sm:w-16 text-green-500 mx-auto mb-4" />
@@ -211,13 +211,14 @@ export function PaymentDialog({
           </div>
         ) : (
           <>
-            <DialogHeader>
+            <DialogHeader className="shrink-0">
               <DialogTitle className="text-xl">Procesar Pago</DialogTitle>
               <DialogDescription>
                 Selecciona el método de pago y completa la transacción
               </DialogDescription>
             </DialogHeader>
 
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
             {/* Total */}
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-4">
@@ -442,8 +443,9 @@ export function PaymentDialog({
                 <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
               </div>
             )}
+            </div>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 pt-4 border-t">
               <Button
                 variant="outline"
                 onClick={() => handleClose(false)}

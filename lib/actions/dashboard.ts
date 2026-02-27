@@ -59,6 +59,7 @@ export interface RecentClosing {
 export interface DashboardData {
   stats: DashboardStats
   topProducts: TopProduct[]
+  lowStockCount: number
   lowStockProducts: LowStockProduct[]
   unsoldProducts: UnsoldProduct[]
   recentClosings: RecentClosing[]
@@ -67,6 +68,7 @@ export interface DashboardData {
 const EMPTY_DASHBOARD: DashboardData = {
   stats: { activeProducts: 0, activeCategories: 0, periodStats: { today: { count: 0, total: 0 }, week: { count: 0, total: 0 }, month: { count: 0, total: 0 } } },
   topProducts: [],
+  lowStockCount: 0,
   lowStockProducts: [],
   unsoldProducts: [],
   recentClosings: [],
@@ -107,6 +109,7 @@ const fetchDashboardData = unstable_cache(
     salesWeekAgg,
     salesMonthAgg,
     topProductsAgg,
+    lowStockCount,
     lowStockProducts,
     soldProductIds,
     recentClosingsData,
@@ -137,7 +140,13 @@ const fetchDashboardData = unstable_cache(
       { $limit: 10 },
     ]),
 
-    // Low stock products
+    // Low stock count (for banner)
+    Product.countDocuments({
+      active: true,
+      $expr: { $lte: ["$stock", "$min_stock"] },
+    }),
+
+    // Low stock products (top 20 for dashboard list)
     Product.find({
       active: true,
       $expr: { $lte: ["$stock", "$min_stock"] },
@@ -256,6 +265,7 @@ const fetchDashboardData = unstable_cache(
   return {
     stats,
     topProducts,
+    lowStockCount,
     lowStockProducts: lowStock,
     unsoldProducts: unsold,
     recentClosings,

@@ -122,8 +122,8 @@ export function CategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg sm:text-xl">
             {isEditing ? "Editar Categoría" : "Nueva Categoría"}
           </DialogTitle>
@@ -139,8 +139,8 @@ export function CategoryDialog({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="grid gap-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="space-y-2">
               <Label htmlFor="cat-name" className="text-sm sm:text-base">Nombre *</Label>
               <Input
@@ -183,7 +183,7 @@ export function CategoryDialog({
             </div>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
